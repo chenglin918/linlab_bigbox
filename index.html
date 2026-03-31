@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Build marker: 2026-03-31 auto-results -->
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Big Box Project - Experimental Dashboard</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231754cf'><path d='M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9M12 4.15 6.04 7.5 12 10.85l5.96-3.35L12 4.15M5 15.91l6 3.38v-6.71L5 9.19v6.72m14 0v-6.72l-6 3.39v6.71l6-3.38Z'/></svg>">
+
+    <!-- Tailwind CSS with specific plugins used in Stitch -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+    <!-- Tailwind Config injected from Stitch screen -->
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1754cf",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+
+    <!-- Small custom overrides for model-viewer and modal loading that Tailwind can't easily handle natively -->
+    <style>
+        .progress-bar {
+            display: block;
+            width: 33%;
+            height: 10%;
+            max-height: 2%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate3d(-50%, -50%, 0);
+            border-radius: 25px;
+            box-shadow: 0px 3px 10px 3px rgba(0, 0, 0, 0.5), 0px 0px 5px 1px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .progress-bar.hide {
+            visibility: hidden;
+            transition: visibility 0.3s;
+        }
+
+        .update-bar {
+            background-color: #1754cf;
+            width: 0%;
+            height: 100%;
+            border-radius: 25px;
+            float: left;
+            transition: width 0.3s;
+        }
+
+        /* Modal transitions */
+        .modal-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content-scale {
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.show .modal-content-scale {
+            transform: scale(1);
+        }
+
+        /* SPA Slide Transitions */
+        .page-section {
+            display: none;
+            opacity: 0;
+            transform: translateX(30px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .page-section.active {
+            display: flex;
+        }
+
+        .page-section.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Navigation active underline */
+        .nav-link {
+            position: relative;
+            padding-bottom: 0.25rem;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #1754cf;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+
+            <!-- Header / Navigation (From Screen 4) -->
+            <header
+                class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50 px-6 md:px-20 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="size-8 flex items-center justify-center bg-primary rounded-lg text-white">
+                        <span class="material-symbols-outlined text-2xl">science</span>
+                    </div>
+                    <h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-tight">Big
+                        Box Project</h2>
+                </div>
+                <div class="hidden md:flex flex-1 justify-end">
+                    <nav class="flex items-center gap-8">
+                        <a class="nav-link text-slate-700 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors cursor-pointer"
+                            onclick="switchTab('introduction')">Introduction</a>
+                        <a class="nav-link text-slate-700 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors cursor-pointer"
+                            onclick="switchTab('instrumentation')">Instrumentation</a>
+                        <a class="nav-link text-slate-700 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors cursor-pointer"
+                            onclick="switchTab('experimental')">Experimental Process</a>
+                        <a class="nav-link text-slate-700 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors cursor-pointer"
+                            onclick="switchTab('results')">Results</a>
+                    </nav>
+                </div>
+            </header>
+
+            <main class="flex flex-1 flex-col items-center py-10 px-6 md:px-20 w-full relative overflow-x-hidden">
+
+                <!-- SECTION: Introduction -->
+                <section id="introduction"
+                    class="page-section active show flex flex-col max-w-[1200px] w-full mb-20 scroll-mt-24">
+                    <!-- Hero -->
+                    <div class="@container mb-12">
+                        <div
+                            class="@[480px]:rounded-xl overflow-hidden shadow-2xl shadow-primary/10 border border-slate-200 dark:border-slate-800">
+                            <div class="bg-cover bg-center flex flex-col justify-end min-h-[450px] relative"
+                                style='background-image: linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.4) 40%, rgba(15, 23, 42, 0.1) 100%), url("https://lh3.googleusercontent.com/aida/AB6AXuDOwsnB2YTNmzTM1Qe7YZEqjiw-9f75J3K2ouLKQpNAZBJ9qiE0TyNbLvDNoBMkLrf3gA6sPgEfJ27DPYBemsfcR1ITQ865h-9HOEgCdQ8_rP6DcXLDX0E-w9RNycca0_7gjuehayCMrJz4W5w1IwXPmJ-fAX4YR0kTmMNrpfGxnZuLXCD2afdfFtCcH9oF-RvqYid5lbtfTTh38bLRXxOmQIADeD2-3k9BUFLu6pkyFJy71PjLAKzHjjsoeNie7Q1r7drseR7Q39A");'>
+                                <div class="flex flex-col p-8 md:p-12 gap-6 max-w-4xl">
+                                    <div class="flex items-center gap-3">
+                                        <span
+                                            class="bg-primary/90 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-[0.2em] text-white shadow-lg border border-white/10">University
+                                            of Victoria</span>
+                                        <span
+                                            class="bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-white shadow-lg border border-white/10 flex items-center gap-2">
+                                            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div> Live
+                                            Project
+                                        </span>
+                                    </div>
+                                    <h1
+                                        class="font-black tracking-tighter drop-shadow-lg mt-4 overflow-visible flex flex-col gap-3">
+                                        <span
+                                            class="block text-4xl md:text-5xl lg:text-6xl px-1 pb-2 bg-clip-text text-transparent bg-gradient-to-br from-white via-slate-100 to-slate-300 leading-none">Large-Scale</span>
+                                        <span
+                                            class="block text-4xl md:text-5xl lg:text-6xl px-1 pb-2 bg-clip-text text-transparent bg-gradient-to-r from-sky-300 via-blue-400 to-indigo-500 leading-none whitespace-nowrap">Freeze-Thaw
+                                            Plate Loading</span>
+                                        <span
+                                            class="block text-4xl md:text-5xl lg:text-6xl px-1 pb-2 bg-clip-text text-transparent bg-gradient-to-br from-white via-slate-100 to-slate-300 leading-none">Model
+                                            Tests</span>
+                                    </h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                        <!-- Content Left -->
+                        <div class="lg:col-span-2 flex flex-col gap-10">
+                            <!-- Motivation / Background -->
+                            <section
+                                class="bg-white dark:bg-slate-900/50 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div class="flex items-center gap-3 mb-6">
+                                    <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+                                    <h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">
+                                        Research Motivation & Background</h2>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                                    <!-- Image Column -->
+                                    <div
+                                        class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                        <img src="Photo/FT_intro.png" alt="Big Box Laboratory Setup"
+                                            class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500 cursor-pointer"
+                                            onerror="this.src='https://images.unsplash.com/photo-1581093196277-9f60898fae58?q=80&w=800&auto=format&fit=crop'; this.title='Please save your image as Photo/FT_intro.png';">
+                                    </div>
+
+                                    <!-- Text Column -->
+                                    <div class="flex flex-col gap-4">
+                                        <p class="text-slate-700 dark:text-slate-400 text-base leading-relaxed">
+                                            Understanding <span class="text-primary font-semibold">frost heave</span>
+                                            and <span class="text-primary font-semibold">thaw settlements</span> is
+                                            critical for the design of resilient infrastructure in cold regions.
+                                        </p>
+
+                                        <div class="bg-background-light dark:bg-slate-800 p-4 rounded-lg mt-2">
+                                            <h4 class="font-bold text-slate-900 dark:text-slate-100 mb-1">CFI Project
+                                                Foundation</h4>
+                                            <p class="text-sm text-slate-600 dark:text-slate-400">Establishment of the
+                                                structures lab in CARSA combining the 250 kN MTS machine, 300 kN
+                                                actuator, strong floor, and reaction frame.</p>
+                                        </div>
+                                        <div class="bg-background-light dark:bg-slate-800 p-4 rounded-lg">
+                                            <h4 class="font-bold text-slate-900 dark:text-slate-100 mb-1">The Big Box
+                                                Initiative</h4>
+                                            <p class="text-sm text-slate-600 dark:text-slate-400">Developing a
+                                                large-scale laboratory cyclic FTPL apparatus to simulate cyclical
+                                                thermal loading and structural loading.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Apparatus Overview -->
+                            <section
+                                class="bg-white dark:bg-slate-900/50 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-4">
+                                <div class="flex items-center gap-3 mb-6">
+                                    <span class="material-symbols-outlined text-primary text-3xl">architecture</span>
+                                    <h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">
+                                        Apparatus Overview & Dimensions</h2>
+                                </div>
+
+                                <div class="flex flex-col gap-6">
+                                    <div
+                                        class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                        <img src="Photo/Box_overall.png"
+                                            alt="Overall Appearance of Big Box Testing Apparatus"
+                                            class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-[1.02] transition-transform duration-500 cursor-zoom-in"
+                                            onerror="this.src='https://images.unsplash.com/photo-1581093196277-9f60898fae58?q=80&w=800&auto=format&fit=crop'; this.title='Please save your image as Photo/Box_overall.png';">
+                                    </div>
+
+                                    <p
+                                        class="text-slate-700 dark:text-slate-400 text-base leading-relaxed bg-background-light dark:bg-slate-800 p-5 rounded-lg border-l-4 border-primary">
+                                        The diagram above illustrates the overall appearance and scale of the whole
+                                        testing apparatus. Designed to accommodate large-scale subgrade infrastructure
+                                        tests, the dimensional configuration is carefully calibrated to minimize
+                                        boundary effects while ensuring robust structural and thermal analysis
+                                        capabilities.
+                                    </p>
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- Sidebar Right -->
+                        <div class="flex flex-col gap-6">
+                            <div class="bg-primary text-white p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-bold mb-4">Study Overview</h3>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between border-b border-white/20 pb-2">
+                                        <span class="text-white/70 text-sm">Institution</span>
+                                        <span class="font-medium text-sm">University of Victoria</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-white/20 pb-2">
+                                        <span class="text-white/70 text-sm">Partner</span>
+                                        <span class="font-medium text-sm">Stratum Logics</span>
+                                    </div>
+                                    <div class="flex justify-between pb-2">
+                                        <span class="text-white/70 text-sm">Focus</span>
+                                        <span class="font-medium text-sm">Unpaved cold-region roads</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Geocell Components -->
+                            <div
+                                class="bg-white dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-4">
+                                <div
+                                    class="flex items-center gap-2 mb-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                                    <span class="material-symbols-outlined text-primary">hive</span>
+                                    <h3 class="font-bold text-slate-900 dark:text-slate-100">Geocell Reinforcement</h3>
+                                </div>
+                                <div class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+                                    <img src="Photo/Geocell_components.png" alt="Geocell Components Diagram"
+                                        class="w-full h-auto object-contain cursor-zoom-in hover:scale-105 transition-transform duration-500"
+                                        onerror="this.src='https://images.unsplash.com/photo-1581093196277-9f60898fae58?q=80&w=800&auto=format&fit=crop';">
+                                </div>
+                                <p
+                                    class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-800 p-3 rounded-md border-l-2 border-primary">
+                                    The figure above demonstrates the Novel Polymeric Alloy (NPA) geocell matrix
+                                    integrated into the subgrade layer. This advanced 3D cellular confinement system
+                                    significantly enhances load distribution efficiency and mitigates differential frost
+                                    heave by restraining lateral displacement of the infill materials under cyclic
+                                    environmental and mechanical loading conditions.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION: Instrumentation -->
+                <section id="instrumentation"
+                    class="page-section flex flex-col max-w-[1200px] w-full mb-20 scroll-mt-24">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="material-symbols-outlined text-primary text-3xl">sensors</span>
+                        <h2 class="text-slate-900 dark:text-slate-100 text-3xl font-bold tracking-tight">Instrumentation
+                            & Specifications</h2>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-400 mb-8 max-w-2xl text-lg">Select any deployed sensor
+                        below to view its specific technical parameters and corresponding installation site photos
+                        mapped dynamically from the apparatus logs.</p>
+
+                    <!-- On Box Sub-section -->
+                    <div class="mb-16">
+                        <h3
+                            class="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4 border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">view_in_ar</span> On Box
+                        </h3>
+
+                        <!-- Dynamic Sensor Grid via JS -->
+                        <div id="sensorListContainerOnBox"
+                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <div
+                                class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl animate-pulse">
+                                <div class="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-lg mb-4"></div>
+                                <div class="h-6 bg-slate-200 dark:bg-slate-800 rounded mb-2 w-3/4"></div>
+                            </div>
+                        </div>
+
+                        <!-- 3D Model View -->
+                        <div
+                            class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl relative">
+                            <div class="w-full h-[700px] bg-[#1a1a1a]">
+                                <!-- Google Model Viewer component -->
+                                <model-viewer src="Bigbox_ppt_box_1.glb" camera-controls auto-rotate
+                                    shadow-intensity="1" exposure="0.9" environment-image="neutral"
+                                    alt="A 3D model of the Big Box testing apparatus"
+                                    class="w-full h-full outline-none">
+                                    <div class="progress-bar hide" slot="progress-bar">
+                                        <div class="update-bar"></div>
+                                    </div>
+                                </model-viewer>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- In Soil Sub-section -->
+                    <div>
+                        <h3
+                            class="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4 border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">layers</span> In Soil
+                        </h3>
+
+                        <!-- Dynamic Sensor Grid via JS -->
+                        <div id="sensorListContainerInSoil"
+                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <div
+                                class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl animate-pulse">
+                                <div class="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-lg mb-4"></div>
+                                <div class="h-6 bg-slate-200 dark:bg-slate-800 rounded mb-2 w-3/4"></div>
+                            </div>
+                        </div>
+
+                        <!-- 3D Model View -->
+                        <div
+                            class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl relative">
+                            <div class="w-full h-[700px] bg-[#1a1a1a]">
+                                <!-- Google Model Viewer component -->
+                                <model-viewer src="Bigbox_ppt_with_sensors.glb" camera-controls auto-rotate
+                                    shadow-intensity="1" exposure="0.9" environment-image="neutral"
+                                    alt="A 3D model of the internal soil sensors" class="w-full h-full outline-none">
+                                    <div class="progress-bar hide" slot="progress-bar">
+                                        <div class="update-bar"></div>
+                                    </div>
+                                </model-viewer>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION: Experimental Process -->
+                <section id="experimental" class="page-section flex flex-col max-w-[1200px] w-full mb-20 scroll-mt-24">
+                    <div class="flex items-center gap-3 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <span class="material-symbols-outlined text-primary text-3xl">route</span>
+                        <div>
+                            <h2 class="text-slate-900 dark:text-slate-100 text-3xl font-bold tracking-tight">
+                                Experimental Methodology</h2>
+                            <p class="text-slate-500 dark:text-slate-400 mt-1">A structured two-phase protocol for
+                                assessing material durability.</p>
+                        </div>
+                    </div>
+
+                    <div
+                        class="space-y-12 mt-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+                        <!-- Phase 1: Freeze-Thaw - Text LEFT, Photo RIGHT -->
+                        <div class="relative flex flex-col md:flex-row items-center justify-between group is-active">
+                            <!-- Text card on the LEFT -->
+                            <div
+                                class="w-[calc(100%-4rem)] ml-auto md:ml-0 md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <h4 class="font-bold text-slate-900 dark:text-slate-100 text-lg mb-1">Freeze-thaw Phase
+                                </h4>
+                                <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Thermal Integrity Protocol
+                                </p>
+                                <p class="text-slate-700 dark:text-slate-300">Samples are subjected to controlled
+                                    thermal cycling to simulate extreme environmental degradation. Precise temperature
+                                    modulation is achieved via the centralized chiller system to mimic winter freeze and
+                                    spring thaw sequences.</p>
+                            </div>
+                            <!-- Center icon -->
+                            <div
+                                class="absolute left-5 md:left-1/2 -translate-x-[calc(50%-0.5px)] flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-primary text-slate-500 group-[.is-active]:text-white shadow shrink-0">
+                                <span class="material-symbols-outlined text-xl">ac_unit</span>
+                            </div>
+                            <!-- Photo on the RIGHT -->
+                            <div
+                                class="hidden md:block md:w-[calc(50%-2.5rem)] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                <img src="Photo/freeze_thaw_setup.png" alt="Freeze-Thaw Test Setup"
+                                    class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-105 transition-transform duration-500">
+                            </div>
+                        </div>
+
+                        <!-- Phase 2: Plate Loading - Text LEFT, Photo RIGHT -->
+                        <div class="relative flex flex-col md:flex-row items-center justify-between group is-active">
+                            <!-- Text card on the LEFT -->
+                            <div
+                                class="w-[calc(100%-4rem)] ml-auto md:ml-0 md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <h4 class="font-bold text-slate-900 dark:text-slate-100 text-lg mb-1">Plate Loading Test
+                                    Phase</h4>
+                                <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Structural Capacity Test</p>
+                                <p class="text-slate-700 dark:text-slate-300">Mechanical load application using the
+                                    dynamic actuator and reaction frame. This phase quantifies the residual structural
+                                    integrity and bearing capacity of the material after the freeze-thaw sequence has
+                                    concluded.</p>
+                            </div>
+                            <!-- Center icon -->
+                            <div
+                                class="absolute left-5 md:left-1/2 -translate-x-[calc(50%-0.5px)] flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-primary text-slate-500 group-[.is-active]:text-white shadow shrink-0">
+                                <span class="material-symbols-outlined text-xl">fitness_center</span>
+                            </div>
+                            <!-- Photo on the RIGHT -->
+                            <div
+                                class="hidden md:block md:w-[calc(50%-2.5rem)] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                <img src="Photo/plate_loading_setup.png" alt="Plate Loading Test Setup"
+                                    class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-105 transition-transform duration-500">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION: Results Placeholder -->
+                <section id="results" class="page-section flex flex-col max-w-[1200px] w-full shrink-0">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="material-symbols-outlined text-primary text-3xl">bar_chart</span>
+                        <h2 class="text-slate-900 dark:text-slate-100 text-3xl font-bold tracking-tight">Sensor Data
+                            Visualization</h2>
+                    </div>
+
+                    <div class="flex flex-col gap-10 mb-12">
+                        <!-- Temperature -->
+                        <div
+                            class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div
+                                class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                                <div class="flex items-center gap-3">
+                                    <span
+                                        class="material-symbols-outlined text-amber-500 text-3xl">device_thermostat</span>
+                                    <h3 class="font-bold text-xl text-slate-900 dark:text-slate-100">Temperature</h3>
+                                </div>
+                                <span
+                                    class="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium">
+                                    Loaded from results folder
+                                </span>
+                            </div>
+                            <div
+                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
+                                <img id="img-temperature" alt="Temperature result figure"
+                                    class="max-w-full max-h-[600px] hidden object-contain">
+                                <p id="placeholder-temperature" class="text-slate-400 text-sm font-medium">Awaiting Data
+                                    Figure</p>
+                            </div>
+                        </div>
+
+                        <!-- Temperature Profile -->
+                        <div
+                            class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div
+                                class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-sky-500 text-3xl">water_drop</span>
+                                    <h3 class="font-bold text-xl text-slate-900 dark:text-slate-100">Temperature Profile
+                                    </h3>
+                                </div>
+                                <span
+                                    class="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium">
+                                    Loaded from results folder
+                                </span>
+                            </div>
+                            <div
+                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
+                                <img id="img-moisture" alt="Temperature profile result figure"
+                                    class="max-w-full max-h-[600px] hidden object-contain">
+                                <p id="placeholder-moisture" class="text-slate-400 text-sm font-medium">Awaiting Data
+                                    Figure</p>
+                            </div>
+                        </div>
+
+                        <!-- Frost Heave -->
+                        <div
+                            class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div
+                                class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-emerald-500 text-3xl">compress</span>
+                                    <h3 class="font-bold text-xl text-slate-900 dark:text-slate-100">Frost heave</h3>
+                                </div>
+                                <span
+                                    class="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium">
+                                    Loaded from results folder
+                                </span>
+                            </div>
+                            <div
+                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
+                                <img id="img-frost-heave" alt="Frost heave result figure"
+                                    class="max-w-full max-h-[600px] hidden object-contain">
+                                <p id="placeholder-frost-heave" class="text-slate-400 text-sm font-medium">Awaiting Data
+                                    Figure</p>
+                            </div>
+                        </div>
+
+                        <!-- DFOS Strain at Bases -->
+                        <div
+                            class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div
+                                class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-indigo-500 text-3xl">timeline</span>
+                                    <h3 class="font-bold text-xl text-slate-900 dark:text-slate-100">DFOS Strain at Bases</h3>
+                                </div>
+                                <span
+                                    class="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium">
+                                    Loaded from results folder
+                                </span>
+                            </div>
+                            <div
+                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
+                                <img id="img-dfos-strain" alt="DFOS base strain result figure"
+                                    class="max-w-full max-h-[600px] hidden object-contain">
+                                <p id="placeholder-dfos-strain" class="text-slate-400 text-sm font-medium">Awaiting Data
+                                    Figure</p>
+                            </div>
+                        </div>
+
+                        <!-- DFOS Strain at Subgrade -->
+                        <div
+                            class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div
+                                class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-rose-500 text-3xl">thermostat</span>
+                                    <h3 class="font-bold text-xl text-slate-900 dark:text-slate-100">DFOS Strain at Subgrade
+                                    </h3>
+                                </div>
+                                <span
+                                    class="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium">
+                                    Loaded from results folder
+                                </span>
+                            </div>
+                            <div
+                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
+                                <img id="img-dfos-temp" alt="DFOS subgrade strain result figure"
+                                    class="max-w-full max-h-[600px] hidden object-contain">
+                                <p id="placeholder-dfos-temp" class="text-slate-400 text-sm font-medium">Awaiting Data
+                                    Figure</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </main>
+
+            <footer
+                class="border-t border-slate-200 dark:border-slate-800 py-8 px-6 md:px-20 bg-white dark:bg-background-dark w-full mt-auto">
+                <div class="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                    <p class="text-slate-500 dark:text-slate-400 text-sm">© 2026 University of Victoria Large-Scale
+                        Research Initiative. All rights reserved.</p>
+                </div>
+            </footer>
+
+        </div>
+    </div>
+
+    <!-- Modal Overlay managed by JS -->
+    <div id="sensorModal"
+        class="modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 h-full w-full">
+        <!-- Click outside boundary -->
+        <div id="modalBackdrop" class="absolute inset-0 cursor-pointer"></div>
+
+        <div
+            class="modal-content-scale relative bg-white dark:bg-slate-900 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
+            <!-- Close Button -->
+            <button id="modalCloseBtn"
+                class="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-500">
+                <span class="material-symbols-outlined text-xl">close</span>
+            </button>
+
+            <!-- Header -->
+            <div
+                class="p-6 md:p-8 bg-background-light dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-4">
+                    <div class="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined text-3xl">sensors</span>
+                    </div>
+                    <div>
+                        <h2 id="modalSensorName" class="text-2xl font-bold text-slate-900 dark:text-slate-100">Sensor
+                            Name</h2>
+                        <p class="text-slate-500 dark:text-slate-400 font-medium text-sm">Hardware Specifications &
+                            Installation Notes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Body -->
+            <div class="overflow-y-auto p-6 md:p-8 flex-1">
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Specs Column -->
+                    <div>
+                        <h3
+                            class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">list_alt</span> Spec Sheet
+                        </h3>
+                        <div id="modalSensorSpecs" class="space-y-3">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Photos Column -->
+                    <div>
+                        <h3
+                            class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">photo_camera</span> Related Imagery
+                        </h3>
+                        <div id="modalSensorPhotos"
+                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

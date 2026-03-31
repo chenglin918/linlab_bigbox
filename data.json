@@ -1,0 +1,161 @@
+{
+  "Overall specification": {
+    "format": "structured",
+    "sensors": [
+      {
+        "name": "Moisture sensor",
+        "specs": {
+          "Manufacturer": "METER",
+          "Model": "EC-5",
+          "Data logger": "Campbell CR 1000",
+          "Dimension \n(mm)": "Length(L)",
+          "Sampling rate": "Every 5 minutes",
+          "Range": "0-100% VMC",
+          "Software": "PC 400",
+          "Installation": "\u2022 Install the sensor parallel to the soil surface (horizontal) in the target layer. Bury at desired measurement depth and backfill gently.\n\u2022 It should be surrounded with finer contents of aggregates.",
+          "Note": "The calulating equation of VMC for base course can use the calibrated equation while the one for subgrade remains unchanged."
+        },
+        "photos": [
+          "Photo/sensors/image5.png"
+        ]
+      },
+      {
+        "name": "Distributed Fiber Optic Sensors (DFOSs)",
+        "specs": {
+          "Manufacturer": "Luna Innovations",
+          "Model": "PA01584",
+          "Data logger": "Luna OdiSI 6104 interrogator",
+          "Dimension \n(mm)": "Diameter (D)",
+          "Sampling rate": "0.5 to 50 Hz",
+          "Range": "\u00b115,000 microstrain",
+          "Software": "OD6*",
+          "Installation": "\u2022 It can be directly placed and buried in soil following the layout. \n\u2022 The horizontal layout refers to \"Instrumentation-DFOS\".",
+          "Note": "Temperature compensation is needed if value is less than 100. \nThe issue of \"ingredient\" should be noticed and usage should collabrate with others.**"
+        },
+        "photos": [
+          "Photo/sensors/image6.png"
+        ]
+      },
+      {
+        "name": "Thermocouple",
+        "specs": {
+          "Manufacturer": "Omega Engineering",
+          "Model": "T-type/K-Type",
+          "Data logger": "NI cDAQ-9174",
+          "Dimension \n(mm)": "D",
+          "Sampling rate": "Depending on data logger",
+          "Range": "-200 \u00b0C to +350 \u00b0C",
+          "Software": "PC 400",
+          "Installation": "\u2022 It can be directly placed and buried in soil.",
+          "Note": "Water may leak through inside of the wire during F-T cycles so that the data logger connected needs to be higher than the sensor loacation. \nThe wiring end need to touch each other to get the reading."
+        },
+        "photos": [
+          "Photo/sensors/image2.png"
+        ]
+      },
+      {
+        "name": "Linear Variable Differential Transformers (LVDTs)",
+        "specs": {
+          "Model": "LRSE-18-100",
+          "Dimension \n(mm)": "D",
+          "Sampling rate": "Up to 500 Hz",
+          "Range": "12.5 mm to 100 mm",
+          "Installation": "\u2022 LVDTs will be magnetically attached to a horizontal steel beam fixed om the frame to ensure vertical alignment. \n\u2022 The end touches the top of the cooling plate during F-T cycle and soil surface during plate loading.",
+          "Note": "Expected displacement should not exceed its travel range.\nThe holder is custom 3D-printed."
+        },
+        "photos": [
+          "Photo/sensors/image11.png"
+        ]
+      },
+      {
+        "name": "Earth pressure cell",
+        "specs": {
+          "Manufacturer": "TML",
+          "Model": "KDE 500kPa",
+          "Data logger": "Campbell CR 1000",
+          "Dimension \n(mm)": "D",
+          "Sampling rate": "Depending on data logger",
+          "Range": "0 to 500 kPa",
+          "Installation": "\u2022 Horizontally place the pressure cell. \n\u2022 Ensure the entire sensing surface is fully in contact with the soil to avoid voids.",
+          "Note": "Perform calibration with known pressure loads (if applicable) before or after embedding"
+        },
+        "photos": [
+          "Photo/sensors/image7.png"
+        ]
+      },
+      {
+        "name": "Dynamic actuator",
+        "specs": {
+          "Manufacturer": "MTS",
+          "Model": "244.23, 150 kN (35 kip)",
+          "Dimension \n(mm)": "Whole length",
+          "Sampling rate": "TBD (1-2 Hz)",
+          "Range": "150 kN",
+          "Software": "MTS TestSuite",
+          "Installation": "\u2022 The actuator is installed on the top beam of the loading frame and will swing back during the compaction process to make room.",
+          "Note": "The loading frequency depends on the displacement needed. It is to simulate traffic loads."
+        },
+        "photos": [
+          "Photo/sensors/image8.png"
+        ]
+      },
+      {
+        "name": "Loading plate",
+        "specs": {
+          "Manufacturer": "Custom made",
+          "Dimension \n(mm)": "D",
+          "Installation": "\u2022 It will be placed on the top surface of base course and directly under the dynamic actuator. \n\u2022 1/2\" Thickness SBR sheet at bottom",
+          "Note": "The design is referenced from Dr. Pokharel's dissertation. It consists of 1\" thick steel plate and about 10 mm-thick rubber base attached at the bottom to simulate rubber tire contact."
+        },
+        "photos": [
+          "Photo/sensors/image3.png"
+        ]
+      },
+      {
+        "name": "Thin-film pressure sensor",
+        "specs": {
+          "Manufacturer": "Walfront",
+          "Model": "MD30-60",
+          "Data logger": "Campbell CR 1000",
+          "Dimension \n(mm)": "L",
+          "Sampling rate": "Depending on data logger",
+          "Range": "0-50 kg",
+          "Software": "PC400",
+          "Installation": "\u2022 Wired with thin wires, and protect the finishing with epoxy.",
+          "Note": "Linearity error is <\u00b18.6% (from 0 to 50% load), and repeatability is very good (<\u00b12.5% of full scale after conditioning)"
+        },
+        "photos": [
+          "Photo/sensors/image10.jpg"
+        ]
+      },
+      {
+        "name": "Strain gauge",
+        "specs": {
+          "Manufacturer": "Omega Engineering",
+          "Model": "KFH Series",
+          "Dimension \n(mm)": "L",
+          "Sampling rate": "Up to 100 Hz",
+          "Range": "\u00b13000 microstrain",
+          "Installation": "\u2022 The mounting surface must be prepared by cleaning and lightly abrading, then degreasing. \n\u2022 Pro-poxy 300 will be used as adhesive and protective coating.",
+          "Note": "The gauge should be bonded carefully to avoid any air bubbles and aligned to the principal strain direction. Temperature compensation is needed."
+        },
+        "photos": [
+          "Photo/sensors/image4.png"
+        ]
+      },
+      {
+        "name": "Dynamic Cone Penetrometer (DCP)",
+        "specs": {
+          "Manufacturer": "Gilson",
+          "Model": "SF-20 Dual-Mass Hammer Dynamic Cone Penetrometer",
+          "Dimension \n(mm)": "Free fall drop height: 575 mm",
+          "Installation": "\u2022 Raise the sliding hammer to its top stop and let it free-fall onto the anvil; count every blow. After each blow  read and log cumulative penetration.",
+          "Note": "Choose the right rod length before performing tests"
+        },
+        "photos": [
+          "Photo/sensors/image9.jpeg"
+        ]
+      }
+    ]
+  }
+}

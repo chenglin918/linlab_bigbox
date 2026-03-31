@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1754cf",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>Results &amp; Sensor Data Visualization</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 lg:px-20">
+<div class="flex items-center gap-4">
+<div class="text-primary">
+<span class="material-symbols-outlined text-3xl">analytics</span>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-tight">Big Box</h2>
+</div>
+<div class="flex flex-1 justify-end items-center gap-8">
+<nav class="flex items-center gap-8">
+<a class="text-slate-600 dark:text-slate-400 text-sm font-medium hover:text-primary transition-colors" href="#">Introduction</a>
+<a class="text-slate-600 dark:text-slate-400 text-sm font-medium hover:text-primary transition-colors" href="#">Instrumentation</a>
+<a class="text-slate-600 dark:text-slate-400 text-sm font-medium hover:text-primary transition-colors" href="#">Experimental Process</a>
+<a class="text-primary text-sm font-bold border-b-2 border-primary pb-1" href="#">Results</a>
+</nav>
+<div class="rounded-full size-10 bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar placeholder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZOHrzud8DvmvJaW97zD-IGUOMA3CBHUGpStMTtJOq8wxX7STIeW7yzz0znlSvEir0OxLl9Upn4D-v56drzDl2SB0bhUs7J8s1w3x-ZVPhbqxTvh3dw0A2ElRz_bvGo6QyNiVSNzEAJra7jDse-mSBZvcrR5hiRBIEGwvfpSI--ZlX2EfroxCY8wmFR2mo0igscJvh7aBaZKnHlYirLv1EKyHOu4ltexX1IiWmKvA6vYgFBdxDecLv_dIjqP2Os7d8T3nPce0Ykd4"/>
+</div>
+</div>
+</header>
+<main class="flex-1 px-6 py-8 lg:px-20 flex flex-col gap-6">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+<div>
+<nav class="flex text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 gap-2">
+<span>Projects</span>
+<span>/</span>
+<span>Arctic Permafrost Monitoring</span>
+<span>/</span>
+<span class="text-primary">Site A-12 Results</span>
+</nav>
+<h1 class="text-3xl font-bold tracking-tight">Sensor Data Visualization</h1>
+<p class="text-slate-600 dark:text-slate-400 mt-1">Phase II Quantitative Analysis &amp; Temporal Trends</p>
+</div>
+<div class="flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-lg">
+<span class="text-xs font-semibold px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">LIVE FEED</span>
+<span class="text-xs text-slate-500">Last updated: Oct 24, 2023 - 14:32 UTC</span>
+</div>
+</div>
+<!-- Context Section: Sensor Location Diagram -->
+<section class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+<div class="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+<div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+<h3 class="font-bold text-sm uppercase tracking-wider text-slate-500">Sensor Location Diagram (Profile View)</h3>
+<span class="material-symbols-outlined text-slate-400 text-lg">info</span>
+</div>
+<div class="aspect-[21/9] w-full bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+<div class="absolute inset-0 flex items-center justify-center">
+<!-- Mock Diagram -->
+<div class="w-4/5 h-2/3 border-b-4 border-slate-400 dark:border-slate-600 flex flex-col relative">
+<div class="absolute -top-10 left-1/4 flex flex-col items-center">
+<span class="w-1 h-32 bg-primary relative">
+<span class="absolute top-0 -left-1.5 size-4 bg-primary rounded-full ring-4 ring-primary/20"></span>
+<span class="absolute top-1/2 -left-1.5 size-4 bg-primary rounded-full ring-4 ring-primary/20"></span>
+<span class="absolute bottom-0 -left-1.5 size-4 bg-primary rounded-full ring-4 ring-primary/20"></span>
+</span>
+<span class="text-[10px] mt-2 font-bold text-primary">BOREHOLE A1</span>
+</div>
+<div class="absolute -top-10 left-3/4 flex flex-col items-center">
+<span class="w-1 h-24 bg-primary relative">
+<span class="absolute top-0 -left-1.5 size-4 bg-primary rounded-full ring-4 ring-primary/20"></span>
+<span class="absolute bottom-0 -left-1.5 size-4 bg-primary rounded-full ring-4 ring-primary/20"></span>
+</span>
+<span class="text-[10px] mt-2 font-bold text-primary">BOREHOLE A2</span>
+</div>
+<div class="mt-auto h-1/2 w-full border-t border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center">
+<span class="text-[10px] uppercase tracking-widest text-slate-400 font-medium">Permafrost Table Depth</span>
+</div>
+</div>
+</div>
+<img class="w-full h-full object-cover opacity-20 absolute inset-0 pointer-events-none" data-alt="Technical geotechnical cross-section diagram of sensor placement" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwmAtrQ8f-FQ9a9Q_NHUMhuLLJ8Fm3DDtSuiQn2sD910CDnutl_7u7YDqUeUPtSRraFm1ql_8dlrBloUNRAQZhs2eU34a8N3LlGsY8uW-TwW61gGITTqM-fgbyTjmfaoZpxG5ocOnTJcYfl_4oqyrfbvhjCWPRGNmxxzkoZXwgB9MdjKFjZwt-fhZNpe8iclAF-qFQ31OaPUWBaETY4yS4ij3239vKpL6eg7AkSUFYQhzAWhr78kZCbAPBVe5d6GUWpY8fvlLq_mI"/>
+</div>
+</div>
+<!-- Sidebar Findings -->
+<div class="lg:col-span-1 flex flex-col gap-6">
+<div class="bg-primary text-white p-6 rounded-xl shadow-lg h-full">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined">lightbulb</span>
+<h3 class="font-bold text-lg">Key Findings</h3>
+</div>
+<ul class="space-y-4 text-sm">
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-blue-200">check_circle</span>
+<p><span class="font-bold">Thermal Anomaly:</span> Significant thaw weakening observed at 0.5m depth between Aug-Sept.</p>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-blue-200">check_circle</span>
+<p><span class="font-bold">Displacement:</span> Horizontal creep rate increased by 12% compared to previous cycle.</p>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-blue-200">check_circle</span>
+<p><span class="font-bold">Pore Pressure:</span> Stable readings indicate high soil saturation, consistent with seasonal melt.</p>
+</li>
+</ul>
+<button class="mt-8 w-full py-3 bg-white/10 hover:bg-white/20 border border-white/30 rounded-lg text-sm font-bold transition-colors">
+                        Download Full Summary
+                    </button>
+</div>
+</div>
+</section>
+<!-- Main Data Visualization Area -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Chart 1: Temperature Profile -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h4 class="font-bold text-slate-900 dark:text-white">Temperature Profile</h4>
+<p class="text-xs text-slate-500">Borehole A1 (Depth vs. Temp)</p>
+</div>
+<button class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined">fullscreen</span></button>
+</div>
+<div class="h-64 flex items-end gap-1 relative border-l border-b border-slate-200 dark:border-slate-800">
+<!-- Simulated Chart -->
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[80%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[75%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[60%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[50%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[40%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[35%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[42%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[48%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[55%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[65%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[70%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/20 border-t-2 border-primary h-[85%] rounded-t-sm"></div>
+<!-- Axis Labels -->
+<div class="absolute -left-8 top-1/2 -rotate-90 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Depth (m)</div>
+<div class="absolute bottom-[-20px] left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Temp (°C)</div>
+</div>
+</div>
+<!-- Chart 2: Displacement over Time -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h4 class="font-bold text-slate-900 dark:text-white">Displacement Trend</h4>
+<p class="text-xs text-slate-500">Cumulative horizontal movement (mm)</p>
+</div>
+<button class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined">fullscreen</span></button>
+</div>
+<div class="h-64 relative border-l border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30">
+<!-- Simulated Line Chart -->
+<svg class="w-full h-full" viewbox="0 0 400 200">
+<path d="M0 180 Q 50 170, 100 150 T 200 100 T 300 80 T 400 20" fill="none" stroke="#1754cf" stroke-width="3"></path>
+<circle cx="100" cy="150" fill="#1754cf" r="4"></circle>
+<circle cx="200" cy="100" fill="#1754cf" r="4"></circle>
+<circle cx="400" cy="20" fill="#1754cf" r="4"></circle>
+</svg>
+<div class="absolute inset-0 grid grid-cols-4 grid-rows-4 pointer-events-none">
+<div class="border-r border-b border-slate-200/50 dark:border-slate-800/50"></div>
+<div class="border-r border-b border-slate-200/50 dark:border-slate-800/50"></div>
+<div class="border-r border-b border-slate-200/50 dark:border-slate-800/50"></div>
+<div class="border-b border-slate-200/50 dark:border-slate-800/50"></div>
+</div>
+</div>
+</div>
+<!-- Chart 3: Heatmap Pressure Distribution -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h4 class="font-bold text-slate-900 dark:text-white">Pressure Heatmap</h4>
+<p class="text-xs text-slate-500">In-situ stress distribution (kPa)</p>
+</div>
+<div class="flex items-center gap-1">
+<div class="size-2 bg-red-500 rounded-full"></div>
+<span class="text-[10px] text-slate-400">HIGH</span>
+</div>
+</div>
+<div class="h-64 grid grid-cols-8 grid-rows-8 gap-0.5">
+<!-- Randomly shaded heatmap cells -->
+<div class="bg-primary/10"></div><div class="bg-primary/10"></div><div class="bg-primary/20"></div><div class="bg-primary/30"></div><div class="bg-primary/40"></div><div class="bg-primary/30"></div><div class="bg-primary/20"></div><div class="bg-primary/10"></div>
+<div class="bg-primary/20"></div><div class="bg-primary/30"></div><div class="bg-primary/40"></div><div class="bg-primary/50"></div><div class="bg-primary/60"></div><div class="bg-primary/50"></div><div class="bg-primary/30"></div><div class="bg-primary/20"></div>
+<div class="bg-primary/30"></div><div class="bg-primary/40"></div><div class="bg-primary/60"></div><div class="bg-primary/80"></div><div class="bg-primary/90"></div><div class="bg-primary/70"></div><div class="bg-primary/40"></div><div class="bg-primary/30"></div>
+<div class="bg-primary/40"></div><div class="bg-primary/60"></div><div class="bg-primary/80"></div><div class="bg-red-500/80"></div><div class="bg-red-500"></div><div class="bg-primary/80"></div><div class="bg-primary/50"></div><div class="bg-primary/40"></div>
+<div class="bg-primary/40"></div><div class="bg-primary/50"></div><div class="bg-primary/70"></div><div class="bg-red-500/70"></div><div class="bg-red-500/90"></div><div class="bg-primary/70"></div><div class="bg-primary/50"></div><div class="bg-primary/40"></div>
+<div class="bg-primary/30"></div><div class="bg-primary/40"></div><div class="bg-primary/50"></div><div class="bg-primary/60"></div><div class="bg-primary/60"></div><div class="bg-primary/50"></div><div class="bg-primary/30"></div><div class="bg-primary/20"></div>
+<div class="bg-primary/20"></div><div class="bg-primary/20"></div><div class="bg-primary/30"></div><div class="bg-primary/40"></div><div class="bg-primary/40"></div><div class="bg-primary/30"></div><div class="bg-primary/20"></div><div class="bg-primary/10"></div>
+<div class="bg-primary/10"></div><div class="bg-primary/10"></div><div class="bg-primary/20"></div><div class="bg-primary/20"></div><div class="bg-primary/20"></div><div class="bg-primary/20"></div><div class="bg-primary/10"></div><div class="bg-primary/10"></div>
+</div>
+</div>
+<!-- Small Stats Cards Row -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+<p class="text-xs font-bold text-slate-500 uppercase">Avg Temperature</p>
+<div class="flex items-end gap-2 mt-2">
+<span class="text-3xl font-bold">-4.2°C</span>
+<span class="text-green-500 text-sm font-bold flex items-center mb-1">
+<span class="material-symbols-outlined text-sm">arrow_downward</span> 0.5°
+                    </span>
+</div>
+<div class="mt-4 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[40%]"></div>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+<p class="text-xs font-bold text-slate-500 uppercase">Max Pore Pressure</p>
+<div class="flex items-end gap-2 mt-2">
+<span class="text-3xl font-bold">142 kPa</span>
+<span class="text-red-500 text-sm font-bold flex items-center mb-1">
+<span class="material-symbols-outlined text-sm">arrow_upward</span> 4%
+                    </span>
+</div>
+<div class="mt-4 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-red-500 h-full w-[85%]"></div>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+<p class="text-xs font-bold text-slate-500 uppercase">Settlement Index</p>
+<div class="flex items-end gap-2 mt-2">
+<span class="text-3xl font-bold">0.024</span>
+<span class="text-slate-400 text-sm font-bold flex items-center mb-1">
+                        STABLE
+                    </span>
+</div>
+<div class="mt-4 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-green-500 h-full w-[20%]"></div>
+</div>
+</div>
+</section>
+<!-- Bottom Raw Data Table Summary -->
+<section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm mb-8">
+<div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<h3 class="font-bold">Latest Sensor Readings (Summary Table)</h3>
+<div class="flex gap-2">
+<button class="text-xs font-bold px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">Filter</button>
+<button class="text-xs font-bold px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">Sort</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm">
+<thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+<tr>
+<th class="px-6 py-4">Sensor ID</th>
+<th class="px-6 py-4">Type</th>
+<th class="px-6 py-4">Depth (m)</th>
+<th class="px-6 py-4">Current Value</th>
+<th class="px-6 py-4">Status</th>
+<th class="px-6 py-4">Confidence</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<tr>
+<td class="px-6 py-4 font-mono">T-A1-05</td>
+<td class="px-6 py-4">Thermistor</td>
+<td class="px-6 py-4">0.5</td>
+<td class="px-6 py-4 font-bold">-0.2°C</td>
+<td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 text-xs">Active Melt</span></td>
+<td class="px-6 py-4">98.2%</td>
+</tr>
+<tr>
+<td class="px-6 py-4 font-mono">P-A1-15</td>
+<td class="px-6 py-4">Piezometer</td>
+<td class="px-6 py-4">1.5</td>
+<td class="px-6 py-4 font-bold">42.8 kPa</td>
+<td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">Nominal</span></td>
+<td class="px-6 py-4">99.5%</td>
+</tr>
+<tr>
+<td class="px-6 py-4 font-mono">D-A2-00</td>
+<td class="px-6 py-4">Extensometer</td>
+<td class="px-6 py-4">Surface</td>
+<td class="px-6 py-4 font-bold">12.4 mm</td>
+<td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs">Warning</span></td>
+<td class="px-6 py-4">94.0%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-6 py-6 lg:px-20 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-xs text-slate-500">© 2023 Arctic Research Institute. Geotechnical Data Systems V4.2.1</p>
+<div class="flex gap-6">
+<a class="text-xs text-slate-500 hover:text-primary transition-colors" href="#">Documentation</a>
+<a class="text-xs text-slate-500 hover:text-primary transition-colors" href="#">Security Profile</a>
+<a class="text-xs text-slate-500 hover:text-primary transition-colors" href="#">API Access</a>
+</div>
+</footer>
+</div>
+</body></html>

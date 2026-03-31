@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Experimental Procedure Workflow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1754cf",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .step-number {
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex flex-col min-h-screen w-full overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-slate-200 dark:border-slate-800 px-6 md:px-10 py-4 bg-white dark:bg-slate-900 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="size-8 flex items-center justify-center bg-primary rounded-lg text-white">
+<span class="material-symbols-outlined text-xl">science</span>
+</div>
+<div>
+<h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-tight uppercase tracking-widest text-[10px] opacity-50">Big Box</h2>
+</div>
+</div>
+<nav class="flex gap-6 md:gap-8 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+<a class="hover:text-primary transition-colors" href="#">Introduction</a>
+<a class="hover:text-primary transition-colors" href="#">Instrumentation</a>
+<a class="text-primary border-b-2 border-primary pb-1" href="#">Experimental process</a>
+<a class="hover:text-primary transition-colors" href="#">Results</a>
+</nav>
+</header>
+<main class="flex-1 max-w-[1400px] mx-auto w-full px-6 py-12">
+<!-- Header Section -->
+<div class="mb-12 border-l-4 border-primary pl-6">
+<h1 class="text-slate-900 dark:text-slate-100 text-4xl font-bold tracking-tight mb-3">Experimental Methodology</h1>
+<p class="text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
+        A structured two-phase protocol for assessing material durability under extreme environmental and mechanical stress. The following sequence details thermal cycling and subsequent structural load testing within the reaction frame assembly.
+    </p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+<!-- Left Column: Experimental Phases -->
+<div class="lg:col-span-7 space-y-10">
+<!-- Phase 1: Freeze-thaw -->
+<section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+<div class="p-8">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xl step-number">01</div>
+<div>
+<h3 class="text-2xl font-bold tracking-tight">Freeze-thaw Phase</h3>
+<p class="text-xs uppercase tracking-widest text-slate-500 font-semibold">Thermal Integrity Protocol</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-3xl">ac_unit</span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
+                                    Samples are subjected to controlled thermal cycling to simulate extreme environmental degradation. This phase focuses on the application of thermal insulation barriers and precise temperature modulation via the centralized chiller system.
+                                </p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+<div>
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-primary mb-4">Specific Procedural Steps</h4>
+<ul class="space-y-4">
+<li class="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+<span class="flex-none w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold">1</span>
+<span>Apply insulation blankets to sample chamber (R-value &gt; 6.0).</span>
+</li>
+<li class="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+<span class="flex-none w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold">2</span>
+<span>Calibrate T1-T4 thermal sensors at 450mm depth intervals.</span>
+</li>
+<li class="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+<span class="flex-none w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold">3</span>
+<span>Execute 4-hour soak at -80°C followed by 2°C/min thawing.</span>
+</li>
+</ul>
+</div>
+<div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-5 border border-slate-100 dark:border-slate-800">
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">Technical Specifications</h4>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700/50">
+<span class="text-xs text-slate-500">Minimum Temp.</span>
+<span class="text-sm font-bold text-primary">-80.0 °C</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700/50">
+<span class="text-xs text-slate-500">Cycle Duration</span>
+<span class="text-sm font-bold text-primary">04:45:00</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700/50">
+<span class="text-xs text-slate-500">Relative Humidity</span>
+<span class="text-sm font-bold text-primary">45% ± 2%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Phase 2: Plate Loading -->
+<section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+<div class="p-8">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xl step-number">02</div>
+<div>
+<h3 class="text-2xl font-bold tracking-tight">Plate Loading Test Phase</h3>
+<p class="text-xs uppercase tracking-widest text-slate-500 font-semibold">Structural Capacity Test</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-3xl">precision_manufacturing</span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
+                                    Mechanical load application using the dynamic actuator and reaction frame. This phase quantifies the residual structural integrity of the material after the freeze-thaw sequence has concluded.
+                                </p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+<div>
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-primary mb-4">Specific Procedural Steps</h4>
+<ul class="space-y-4">
+<li class="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+<span class="flex-none w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold">1</span>
+<span>Initialize dynamic actuator and zero-point alignment.</span>
+</li>
+<li class="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+<span class="flex-none w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold">2</span>
+<span>Position aluminum loading plates (96 well-point grid).</span>
+</li>
+<li class="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+<span class="flex-none w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold">3</span>
+<span>Incremental force application with force-feedback loop.</span>
+</li>
+</ul>
+</div>
+<div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-5 border border-slate-100 dark:border-slate-800">
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">Technical Specifications</h4>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700/50">
+<span class="text-xs text-slate-500">Max Actuator Force</span>
+<span class="text-sm font-bold text-primary">12.5 kN</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700/50">
+<span class="text-xs text-slate-500">Loading Tolerance</span>
+<span class="text-sm font-bold text-primary">± 0.05 mm</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700/50">
+<span class="text-xs text-slate-500">Frame Height</span>
+<span class="text-sm font-bold text-primary">3.5 m</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Visual Setup Reference -->
+<div class="lg:col-span-5">
+<div class="sticky top-8 space-y-6">
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+<div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+<span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Apparatus Reference: Fig. 4.1</span>
+<span class="material-symbols-outlined text-slate-400 text-sm">photo_camera</span>
+</div>
+<div class="p-6">
+<div class="relative w-full aspect-[4/3] rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 group">
+<img alt="Experimental Setup Apparatus" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4p-9Jpbarzu-7wBsBcYpPw5XqK03JPiA3p8vZlL7ErnRRbLaI6rubK_vAixdiAW-lcaPfJlT_iKrOile1xS7CKXNqjdZ1qBV7bc2_duLLodUOOWDxV-XOkdoizzb7fxoT_E18uc358ccZjmoX4ZhTpv8ZpZWyzGVTAe-XpfDvjQtaUrjEtq2i5er46OgKpwkLFncyquNGRSTibkHWdHtYvNvxqm139SCMW0bSUiZzVsYBF7KUjwjZWPONbLhonAokRIjaq7YRtEo"/>
+<div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none"></div>
+<div class="absolute bottom-4 left-4 right-4 text-[10px] text-white/90 font-medium">
+                                            High-capacity reaction frame with integrated dynamic actuator and aluminum plate assembly.
+                                        </div>
+</div>
+<div class="mt-6 space-y-3">
+<h4 class="text-xs font-bold uppercase tracking-widest text-slate-400">Component Legend</h4>
+<div class="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px] text-slate-600 dark:text-slate-400">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                                                Reaction frame
+                                            </div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                                                Dynamic actuator
+                                            </div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                                                Aluminum plates
+                                            </div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                                                Chiller unit
+                                            </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Academic/Reference Footer -->
+</div>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6">
+<div class="flex items-center gap-3 text-xs text-slate-500">
+<span class="material-symbols-outlined text-sm">event</span>
+                        Last updated: Oct 24, 2023 at 14:20 UTC
+                    </div>
+<div class="flex gap-4 w-full sm:w-auto">
+<button class="flex-1 sm:flex-none px-8 py-3 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Save Draft</button>
+<button class="flex-1 sm:flex-none px-8 py-3 rounded-lg bg-primary text-white text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity shadow-lg shadow-primary/20">Confirm Procedure</button>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

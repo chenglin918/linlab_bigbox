@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Instrumentation &amp; 3D Model | Freeze-Thaw Research</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1754cf",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        [x-cloak] { display: none !important; }
+        .sensor-content { display: none; }
+        .sensor-content.active { display: block; }
+        .nav-item.active { 
+            background-color: rgba(23, 84, 207, 0.1); 
+            color: #1754cf;
+            border-left: 4px solid #1754cf;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 lg:px-10 h-16 sticky top-0 z-50">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-8">
+<svg fill="currentColor" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z"></path>
+</svg>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-tight">Freeze-Thaw Research Portal</h2>
+</div>
+<div class="flex flex-1 justify-end h-full">
+<nav class="hidden md:flex items-center h-full">
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors h-full flex items-center px-1" href="#">Introduction</a>
+<a class="text-primary text-sm font-semibold border-b-2 border-primary h-full flex items-center px-1" href="#">Instrumentation</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors h-full flex items-center px-1" href="#">Experimental Process</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors h-full flex items-center px-1" href="#">Results</a>
+</nav>
+</div>
+</header>
+<main class="flex flex-1 flex-col lg:flex-row h-[calc(100vh-64px)] overflow-hidden">
+<!-- Left Panel: Navigation Sidebar -->
+<aside class="w-full lg:w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+<div class="p-6 border-b border-slate-100 dark:border-slate-800">
+<h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Instrumentation</h3>
+<p class="text-lg font-bold text-slate-900 dark:text-slate-100">Sensor Selection</p>
+</div>
+<nav class="flex-1 overflow-y-auto py-4">
+<button class="nav-item active w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all border-l-4 border-transparent" id="btn-moisture" onclick="selectSensor('moisture')">
+<span class="text-sm font-semibold">Moisture sensor</span>
+</button>
+<button class="nav-item w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all border-l-4 border-transparent" id="btn-thermocouples" onclick="selectSensor('thermocouples')">
+<span class="text-sm font-semibold">Thermocouples</span>
+</button>
+<button class="nav-item w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all border-l-4 border-transparent" id="btn-earth-pressure" onclick="selectSensor('earth-pressure')">
+<span class="text-sm font-semibold">Earth pressure cell</span>
+</button>
+<button class="nav-item w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all border-l-4 border-transparent" id="btn-lvdt" onclick="selectSensor('lvdt')">
+<span class="text-sm font-semibold">LVDT</span>
+</button>
+<button class="nav-item w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all border-l-4 border-transparent" id="btn-dfos-strain" onclick="selectSensor('dfos-strain')">
+<span class="text-sm font-semibold">DFOSs strain</span>
+</button>
+<button class="nav-item w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all border-l-4 border-transparent" id="btn-dfos-temp" onclick="selectSensor('dfos-temp')">
+<span class="text-sm font-semibold">DFOSs temperature</span>
+</button>
+</nav>
+<div class="p-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-2 mb-2">
+<div class="size-2 rounded-full bg-emerald-500"></div>
+<span class="text-xs font-bold text-slate-500 uppercase">System Online</span>
+</div>
+<p class="text-[10px] font-mono text-slate-400">v2.4.0-alpha Build 82</p>
+</div>
+</aside>
+<!-- Center Panel: 3D Model Visualization -->
+<section class="flex-1 bg-background-light dark:bg-background-dark flex flex-col overflow-hidden">
+<div class="flex-1 flex items-center justify-center p-8">
+<div class="w-full h-full relative bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl group">
+<div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+<div class="text-center">
+<span class="material-symbols-outlined text-9xl text-primary/40 mb-4 block">3d_rotation</span>
+<p class="text-slate-400 font-bold uppercase tracking-widest text-sm">Interactive 3D Model View</p>
+<p class="text-slate-400 text-xs mt-2">Real-time spatial mapping of deployed sensors</p>
+</div>
+<div class="absolute bottom-6 right-6 flex gap-3">
+<button class="bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 flex items-center gap-2 text-xs font-black text-slate-700 dark:text-slate-300 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-lg">zoom_in</span>
+                                ZOOM
+                            </button>
+<button class="bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 flex items-center gap-2 text-xs font-black text-slate-700 dark:text-slate-300 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-lg">3d_rotation</span>
+                                ROTATE
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Panel: Detailed Instrumentation -->
+<aside class="w-full lg:w-[420px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto">
+<div class="p-6">
+<h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-6">Instrumentation Detail</h3>
+<!-- Moisture Sensor Content -->
+<div class="sensor-content active space-y-6" id="content-moisture">
+<!-- Product Image -->
+<div class="w-full aspect-[16/9] bg-[#f8fafc] dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center justify-center p-4">
+<img alt="EC-5 Soil Moisture Sensor" class="max-h-full max-w-full object-contain mix-blend-multiply dark:mix-blend-normal" src="https://placeholder.pics/svg/300"/>
+</div>
+<!-- Technical Specs -->
+<div class="space-y-3">
+<h4 class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Technical Specs</h4>
+<div class="grid grid-cols-3 gap-3">
+<div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
+<p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Dimensions</p>
+<p class="text-[10px] font-medium leading-relaxed text-slate-700 dark:text-slate-300">Length: 89 mm<br/>Width: 18 mm<br/>Height: 7 mm</p>
+</div>
+<div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
+<p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Sampling Interval</p>
+<p class="text-[10px] font-medium text-slate-700 dark:text-slate-300">Every 5 minutes</p>
+</div>
+<div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
+<p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Measurement Range</p>
+<p class="text-[10px] font-medium text-slate-700 dark:text-slate-300">0-100% VMC</p>
+</div>
+</div>
+</div>
+<!-- Deployment Schematic -->
+<div class="space-y-3">
+<h4 class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Deployment Schematic</h4>
+<div class="relative w-full aspect-[4/3] bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50 overflow-hidden flex items-center justify-center">
+<!-- Placeholder for schematic -->
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-200 dark:text-slate-700 text-8xl">grid_on</span>
+</div>
+<!-- Schematic Image / Graphic Representation -->
+<div class="z-10 w-4/5 h-3/4 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 rounded-md p-2 flex items-end justify-center">
+<div class="w-full h-1/2 bg-blue-500/5 border-t border-blue-500/20 relative">
+<div class="absolute top-1/4 left-1/2 size-1 bg-red-500 rounded-full"></div>
+</div>
+</div>
+<!-- Callout Detail -->
+<div class="absolute top-4 right-4 z-20">
+<div class="relative flex flex-col items-center">
+<div class="size-20 bg-white dark:bg-slate-800 rounded-full border-2 border-primary shadow-xl overflow-hidden flex items-center justify-center p-2 ring-4 ring-white/50 dark:ring-slate-900/50">
+<img alt="EC-5 Detail" class="object-contain" src="https://placeholder.pics/svg/300"/>
+</div>
+<div class="bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 mt-1 shadow-sm">
+<p class="text-[8px] font-black text-center leading-tight">EC-5<br/>Soil Moisture<br/>Sensor</p>
+</div>
+<!-- Connector line to schematic -->
+<div class="absolute -left-12 top-10 w-12 h-0.5 bg-primary/40 -rotate-12"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Fallback content for other sensors - placeholder styling consistent with moisture -->
+<div class="sensor-content space-y-6" id="content-thermocouples">
+<div class="w-full aspect-[16/9] bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-5xl text-slate-300">thermostat</span>
+</div>
+<div class="space-y-2">
+<h4 class="text-lg font-bold">Thermocouples Detail</h4>
+<p class="text-sm text-slate-500">High-density vertical grid sensors for tracking the 0°C isotherm.</p>
+</div>
+</div>
+<!-- Other sensor contents would follow similar simplified patterns -->
+</div>
+</aside>
+</main>
+<footer class="lg:px-10 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="flex items-center gap-2 text-slate-400">
+<span class="material-symbols-outlined text-sm">science</span>
+<p class="text-[10px] font-bold uppercase tracking-widest">© 2024 Cryogenic Soil Research Consortium</p>
+</div>
+<div class="flex gap-6">
+<a class="text-[10px] font-black text-slate-500 hover:text-primary transition-colors uppercase" href="#">Privacy Policy</a>
+<a class="text-[10px] font-black text-slate-500 hover:text-primary transition-colors uppercase" href="#">Safety Manual</a>
+<a class="text-[10px] font-black text-slate-500 hover:text-primary transition-colors uppercase" href="#">API Support</a>
+</div>
+</div>
+</footer>
+</div>
+</div>
+<script>
+    function selectSensor(sensorId) {
+        // Update Navigation UI
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.classList.remove('active');
+        });
+        const btn = document.getElementById('btn-' + sensorId);
+        if (btn) btn.classList.add('active');
+
+        // Update Content UI
+        const contents = document.querySelectorAll('.sensor-content');
+        contents.forEach(content => {
+            content.classList.remove('active');
+        });
+        const content = document.getElementById('content-' + sensorId);
+        if (content) {
+            content.classList.add('active');
+        } else {
+            // Default to first content if specific sensor detail not found
+            document.getElementById('content-moisture').classList.add('active');
+        }
+    }
+</script>
+</body></html>
