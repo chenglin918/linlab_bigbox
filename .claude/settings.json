@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3)",
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/gen_extra_charts.py)",
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/apply_charts.py)",
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/apply_zoom.py)",
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/fix_temp_zoom.py)",
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/add_reset_btns.py)",
+      "Bash(python3 -c ':*)",
+      "WebFetch(domain:baselok.com)",
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/add_applications.py)",
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/rewrite_applications.py)",
+      "Bash(curl -s \"https://baselok.com/geocell/\")",
+      "Read(//c/Users/16895/.claude/projects/d--OneDrive---University-of-Victoria-OneDrive---University-of-Victoria-Documents-GitHub-linlab_bigbox/93d24f7b-96ce-46a6-92b7-28a224c53a57/tool-results/**)",
+      "Read(//c/Users/16895/.claude/**)",
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/apply_all_changes.py)"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ':*)",
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/gen_temp_chart.py)"
+    ]
+  }
+}
