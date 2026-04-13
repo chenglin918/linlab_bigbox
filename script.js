@@ -38,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load fixed Results images from the local results folder.
     loadResultImagesFromFolder();
+
+    // If the page loads directly on the results tab, init the chart now
+    if (hash === 'results') { initTemperatureChart(); initTempProfileChart(); initFrostHeaveChart(); initWaterContentChart(); }
 });
 
 let stateData = null;
@@ -71,6 +74,8 @@ function switchTab(targetId, initialLoad = false) {
         return;
     }
 
+    if (targetId === 'results') { initTemperatureChart(); initTempProfileChart(); initFrostHeaveChart(); initWaterContentChart(); }
+
     if (activeSection === targetSection) return;
 
     // Determine slide direction based on DOM order for a natural feel
@@ -102,34 +107,49 @@ function switchTab(targetId, initialLoad = false) {
 
 function loadResultImagesFromFolder() {
     const figureMap = {
-        'img-temperature': 'Heatmap change occur at distinction.png',
-        'img-moisture': 'Temp_profile_0308.jpg',
-        'img-frost-heave': 'Temp&Frost heave history.png',
         'img-dfos-strain': 'DFOS results_base strain.jpg',
-        'img-dfos-temp': 'DFOS results_subgrade strain.jpg'
+        'img-dfos-temp':   'DFOS results_subgrade strain.jpg'
     };
 
     Object.entries(figureMap).forEach(([imgId, fileName]) => {
-        const imgElement = document.getElementById(imgId);
-        const placeholderElement = document.getElementById('placeholder-' + imgId.replace('img-', ''));
-
-        if (!imgElement) return;
-
-        imgElement.onload = () => {
-            imgElement.classList.remove('hidden');
-            if (placeholderElement) placeholderElement.classList.add('hidden');
+        const imgEl = document.getElementById(imgId);
+        const phEl  = document.getElementById('placeholder-' + imgId.replace('img-', ''));
+        if (!imgEl) return;
+        imgEl.onload  = () => {
+            imgEl.classList.remove('hidden');
+            imgEl.classList.add('zoomable');
+            imgEl.addEventListener('click', () => openLightbox(imgEl.src));
+            if (phEl) phEl.classList.add('hidden');
         };
-
-        imgElement.onerror = () => {
-            imgElement.classList.add('hidden');
-            if (placeholderElement) {
-                placeholderElement.classList.remove('hidden');
-                placeholderElement.textContent = `Could not load ${fileName}`;
-            }
-        };
-
-        imgElement.src = `results/${encodeURIComponent(fileName)}`;
+        imgEl.onerror = () => { imgEl.classList.add('hidden'); if (phEl) { phEl.classList.remove('hidden'); phEl.textContent = `Could not load ${fileName}`; } };
+        imgEl.src = 'results/' + encodeURIComponent(fileName);
     });
+}
+
+function resetChartZoom(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (canvas && canvas._chartInstance) {
+        canvas._chartInstance.resetZoom();
+    } else if (Chart && Chart.instances) {
+        // Chart.js 4.x: find instance by canvas
+        const instance = Object.values(Chart.instances).find(c => c.canvas.id === canvasId);
+        if (instance) instance.resetZoom();
+    }
+}
+
+function openLightbox(src) {
+    const lb    = document.getElementById('img-lightbox');
+    const lbImg = document.getElementById('lightbox-img');
+    lbImg.src = src;
+    lb.classList.add('open');
+    document.addEventListener('keydown', closeLightboxOnEsc);
+}
+
+function closeLightboxOnEsc(e) {
+    if (e.key === 'Escape') {
+        document.getElementById('img-lightbox').classList.remove('open');
+        document.removeEventListener('keydown', closeLightboxOnEsc);
+    }
 }
 
 function closeModal() {
@@ -175,10 +195,10 @@ function openModal(sensor) {
     if (sensor.photos && sensor.photos.length > 0) {
         sensor.photos.forEach(photo => {
             photosHtml += `
-                <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm h-48 bg-slate-100 dark:bg-slate-800 relative group">
-                    <img src="${photo}" alt="${sensor.name} photo" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm h-48 bg-slate-100 dark:bg-slate-800 relative group cursor-zoom-in" onclick="openLightbox('${photo}')">
+                    <img src="${photo}" alt="${sensor.name} photo" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                        <span class="text-white text-xs font-medium">Installation View</span>
+                        <span class="text-white text-xs font-medium">Click to enlarge</span>
                     </div>
                 </div>
             `;
@@ -223,9 +243,14 @@ async function loadSpecificationsData() {
                 !inSoilExcludedKeywords.some(keyword => s.name.toLowerCase().includes(keyword))
             );
 
+            // Purpose labels in reading order (left→right, top→bottom across both sections)
+            const onBoxLabels  = ['Wall deformation', 'Frost heave', 'Lateral pressure'];
+            const inSoilLabels = ['Water content migration', 'Soil strain change', 'Temperature profile',
+                                  'Thermal & dynamic loading', 'Mimic traffic loading', 'Quality control'];
+
             // Render to containers
-            renderSensors(onBoxSensors, 'sensorListContainerOnBox');
-            renderSensors(inSoilSensors, 'sensorListContainerInSoil');
+            renderSensors(onBoxSensors,  'sensorListContainerOnBox',  onBoxLabels);
+            renderSensors(inSoilSensors, 'sensorListContainerInSoil', inSoilLabels);
         } else {
             throw new Error("Data format changed or 'Overall specification' missing.");
         }
@@ -247,43 +272,38 @@ async function loadSpecificationsData() {
     }
 }
 
-function renderSensors(sensors, containerId) {
+function renderSensors(sensors, containerId, purposeLabels = []) {
     const container = document.getElementById(containerId);
     if(!container) return;
-    
+
     container.innerHTML = '';
-    
+
     if (!sensors || sensors.length === 0) {
         container.innerHTML = '<p class="col-span-full text-center text-slate-500 dark:text-slate-400 py-8">No sensors recorded in the database.</p>';
         return;
     }
-    
+
     sensors.forEach((sensor, index) => {
         const card = document.createElement('div');
-        // Staggered animation delay
         card.style.animationDelay = `${index * 50}ms`;
         card.className = 'group flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 cursor-pointer hover:border-primary dark:hover:border-primary hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgba(23,84,207,0.15)] transition-all duration-300 transform hover:-translate-y-1';
-        
-        // Define some icon logic depending on the name
-        let icon = "sensors";
-        let colorClass = "text-primary bg-primary/10";
-        if(sensor.name.toLowerCase().includes('pressure')) { icon = "compress"; colorClass = "text-sky-500 bg-sky-500/10"; }
-        if(sensor.name.toLowerCase().includes('temp') || sensor.name.toLowerCase().includes('thermo')) { icon = "device_thermostat"; colorClass = "text-amber-500 bg-amber-500/10"; }
-        if(sensor.name.toLowerCase().includes('lvdt') || sensor.name.toLowerCase().includes('disp')) { icon = "straighten"; colorClass = "text-emerald-500 bg-emerald-500/10"; }
+
+        const imgSrc = sensor.photos && sensor.photos.length > 0 ? sensor.photos[0] : '';
+        const purposeLabel = purposeLabels[index] || 'View Spec Sheet';
 
         card.innerHTML = `
             <div class="flex items-start justify-between mb-4">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center ${colorClass}">
-                    <span class="material-symbols-outlined">${icon}</span>
+                <div class="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+                    ${imgSrc ? `<img src="${imgSrc}" alt="${sensor.name}" class="w-full h-full object-cover">` : '<span class="material-symbols-outlined text-slate-400 w-full h-full flex items-center justify-center text-3xl">sensors</span>'}
                 </div>
                 <span class="material-symbols-outlined text-slate-300 dark:text-slate-600 group-hover:text-primary transition-colors">arrow_outward</span>
             </div>
             <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">${sensor.name}</h3>
             <p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
-                View Spec Sheet
+                ${purposeLabel}
             </p>
         `;
-        
+
         card.onclick = () => openModal(sensor);
         container.appendChild(card);
     });

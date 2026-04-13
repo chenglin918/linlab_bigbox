@@ -11,11 +11,15 @@
 
     <!-- Tailwind CSS with specific plugins used in Stitch -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
     <!-- Tailwind Config injected from Stitch screen -->
     <script id="tailwind-config">
@@ -35,6 +39,270 @@
                 },
             },
         }
+
+      // ── Temperature Profile Chart ──
+      // ── JSON data cache ──────────────────────────────────────────────────────
+      let _resultsData = null;
+      async function getResultsData() {
+        if (_resultsData) return _resultsData;
+        const res = await fetch('results_data.json?t=' + Date.now());
+        _resultsData = await res.json();
+        return _resultsData;
+      }
+
+      let _tpChartInit = false;
+      async function initTempProfileChart() {
+        if (_tpChartInit) return; _tpChartInit = true;
+        const d    = await getResultsData();
+        const TP   = d.tempProfile;
+        const COLS = ["#64748b","#f59e0b","#3b82f6","#ef4444","#10b981"];
+        const dark = () => document.documentElement.classList.contains('dark');
+        const gc   = () => dark() ? 'rgba(148,163,184,0.15)' : 'rgba(0,0,0,0.08)';
+        const tc   = () => dark() ? '#94a3b8' : '#475569';
+        new Chart(document.getElementById('chart-temp-profile'), {
+          type: 'scatter',
+          data: {
+            datasets: TP.snapshots.map((s, i) => ({
+              label: s.l,
+              data: s.t.map((temp, j) => ({ x: temp, y: TP.pos[j] })),
+              borderColor: COLS[i % COLS.length],
+              backgroundColor: COLS[i % COLS.length] + '33',
+              showLine: true,
+              borderWidth: 2,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              tension: 0,
+              spanGaps: true,
+            }))
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 400 },
+            interaction: { mode: 'nearest', intersect: false, axis: 'y' },
+            plugins: {
+              legend: { position: 'top', labels: { color: tc(), boxWidth: 12, padding: 10, font: { size: 11 } } },
+              tooltip: {
+                backgroundColor: dark() ? '#1e293b' : '#ffffff',
+                borderColor: dark() ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+                titleColor: tc(), bodyColor: tc(), padding: 10,
+                callbacks: {
+                  title: items => `Depth: ${items[0].parsed.y} mm`,
+                  label: item => `  ${item.dataset.label}: ${item.parsed.x != null ? item.parsed.x.toFixed(2) + ' °C' : 'N/A'}`,
+                },
+              },
+            },
+            scales: {
+              x: { title: { display: true, text: 'Temperature (°C)', color: tc(), font: { size: 12 } },
+                     grid: { color: gc() }, ticks: { color: tc() } },
+              y: { title: { display: true, text: 'Vertical Position (mm)', color: tc(), font: { size: 12 } },
+                     grid: { color: gc() }, ticks: { color: tc() } },
+            },
+          },
+        });
+      }
+
+      // ── Shared: draws horizontal text labels above chart area for each vertical event-marker line ──
+      function makeMarkerLabelsPlugin(markerData) {
+        return {
+          id: 'markerLabels',
+          afterDraw(chart) {
+            const ctx = chart.ctx;
+            const xScale = chart.scales.x;
+            if (!xScale) return;
+            const { top, bottom, left, right } = chart.chartArea;
+            const ROW_H = 13; // px between staggered rows
+            const MIN_GAP = 60; // px minimum gap before staggering to row 2
+
+            ctx.save();
+            ctx.font = 'bold 10px Inter, sans-serif';
+            ctx.fillStyle = '#000000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+
+            // Collect visible markers with pixel positions
+            const visible = markerData.map(({ day, label }) => ({
+              xPx: xScale.getPixelForValue(day), label, day
+            })).filter(m => m.xPx >= left && m.xPx <= right);
+
+            // Assign rows: if too close to previous row-0 label, move to row 1
+            const rowAssigned = [];
+            let lastRow0X = -Infinity;
+            visible.forEach(m => {
+              const row = (m.xPx - lastRow0X) < MIN_GAP ? 1 : 0;
+              rowAssigned.push({ ...m, row });
+              if (row === 0) lastRow0X = m.xPx;
+            });
+
+            rowAssigned.forEach(({ xPx, label, row }) => {
+              // Draw dashed line inside chart area
+              ctx.save();
+              ctx.beginPath();
+              ctx.rect(left, top, right - left, bottom - top);
+              ctx.clip();
+              ctx.strokeStyle = '#000000';
+              ctx.lineWidth = 1;
+              ctx.setLineDash([4, 4]);
+              ctx.beginPath();
+              ctx.moveTo(xPx, top);
+              ctx.lineTo(xPx, bottom);
+              ctx.stroke();
+              ctx.restore();
+
+              // Draw label above chart area, staggered by row
+              const yLabel = top - 4 - row * ROW_H;
+              ctx.fillText(label, xPx, yLabel);
+            });
+
+            ctx.restore();
+          }
+        };
+      }
+      const SHARED_MKRS = [
+        { day: 3.75,   label: 'Freezing 150 mm' },
+        { day: 6.667,  label: 'Freezing 300 mm (base layer)' },
+        { day: 11.667, label: 'Freezing 400 mm' },
+        { day: 32.5,   label: 'Freezing 800 mm' },
+        { day: 43.0,   label: 'Fully frozen' },
+        { day: 60.0,   label: 'Begin thawing' },
+      ];
+
+      // ── Frost Heave Chart ──
+      let _fhChartInit = false;
+      async function initFrostHeaveChart() {
+        if (_fhChartInit) return; _fhChartInit = true;
+        const d    = await getResultsData();
+        const FH   = d.frostHeave.rows;
+        const MKRS = [3.75,6.667,11.667,32.5,43.0,60.0];
+        const COLS = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b"];
+        const LBLS = ['LVDT 1 – Back Right', 'LVDT 2 – Front Right', 'LVDT 3 – Front Left', 'LVDT 4 – Back Left'];
+        const dark = () => document.documentElement.classList.contains('dark');
+        const gc   = () => dark() ? 'rgba(148,163,184,0.15)' : 'rgba(0,0,0,0.08)';
+        const tc   = () => dark() ? '#94a3b8' : '#475569';
+        const datasets = LBLS.map((lbl, i) => ({
+          label: lbl,
+          data: FH.map(r => ({ x: r[0], y: r[i + 1] })),
+          borderColor: COLS[i],
+          backgroundColor: 'transparent',
+          showLine: true,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: COLS[i],
+          tension: 0,
+          spanGaps: true,
+        }));
+        MKRS.forEach(day => {
+          datasets.push({
+            label: `Day ${day}`,
+            data: [{ x: day, y: 0 }, { x: day, y: 40 }],
+            borderColor: '#000000',
+            backgroundColor: 'transparent',
+            showLine: true,
+            borderWidth: 1,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            tension: 0,
+          });
+        });
+        new Chart(document.getElementById('chart-frost-heave'), {
+          type: 'scatter',
+          data: { datasets },
+          plugins: [makeMarkerLabelsPlugin(SHARED_MKRS)],
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 400 },
+            layout: { padding: { top: 30 } },
+            interaction: { mode: 'index', intersect: false, axis: 'x' },
+            plugins: {
+              legend: {
+                display: false,
+              },
+              tooltip: {
+                mode: 'index', intersect: false,
+                filter: item => !item.dataset.label.startsWith('Day '),
+                backgroundColor: dark() ? '#1e293b' : '#ffffff',
+                borderColor: dark() ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+                titleColor: tc(), bodyColor: tc(), padding: 12,
+                callbacks: {
+                  title: items => `Day ${items[0].parsed.x.toFixed(2)}`,
+                  label: item => {
+                    const v = item.parsed.y;
+                    return v != null ? `  ${item.dataset.label}: ${v.toFixed(3)} mm` : null;
+                  },
+                },
+              },
+            zoom: {
+              zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" },
+              pan:  { enabled: true, mode: "x" },
+              limits: { x: { min: "original", max: "original" } },
+            },
+            },
+            scales: {
+              x: { type: 'linear',
+                     title: { display: true, text: 'Time (days)', color: tc(), font: { size: 12 } },
+                     grid: { color: gc() }, ticks: { color: tc(), maxTicksLimit: 14 } },
+              y: { title: { display: true, text: 'Frost Heave (mm)', color: tc(), font: { size: 12 } },
+                     grid: { color: gc() }, ticks: { color: tc() } },
+            },
+          },
+        });
+      }
+      let _wcChartInit = false;
+      async function initWaterContentChart() {
+        if (_wcChartInit) return; _wcChartInit = true;
+        const d    = await getResultsData();
+        const WC   = d.waterContent;
+        const COLS = ["#64748b","#f59e0b","#3b82f6","#ef4444","#10b981","#a855f7","#f97316"];
+        const dark = () => document.documentElement.classList.contains('dark');
+        const gc   = () => dark() ? 'rgba(148,163,184,0.15)' : 'rgba(0,0,0,0.08)';
+        const tc   = () => dark() ? '#94a3b8' : '#475569';
+        new Chart(document.getElementById('chart-water-content'), {
+          type: 'scatter',
+          data: {
+            datasets: WC.snapshots.map((snap, i) => ({
+              label: snap.l,
+              data: WC.pos.map((d, j) => ({ x: snap.v[j], y: d })),
+              borderColor: COLS[i % COLS.length],
+              backgroundColor: COLS[i % COLS.length] + '33',
+              showLine: true,
+              borderWidth: 2,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              tension: 0,
+              spanGaps: true,
+            }))
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 400 },
+            interaction: { mode: 'nearest', intersect: false, axis: 'y' },
+            plugins: {
+              legend: { position: 'top', labels: { color: tc(), boxWidth: 12, padding: 10, font: { size: 11 } } },
+              tooltip: {
+                backgroundColor: dark() ? '#1e293b' : '#ffffff',
+                borderColor: dark() ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+                titleColor: tc(), bodyColor: tc(), padding: 10,
+                callbacks: {
+                  title: items => `Depth: ${items[0].parsed.y} mm`,
+                  label: item => `  ${item.dataset.label}: ${item.parsed.x != null ? item.parsed.x.toFixed(2) + ' %' : 'N/A'}`,
+                },
+              },
+            },
+            scales: {
+              x: { title: { display: true, text: 'Volumetric Water Content (%)', color: tc(), font: { size: 12 } },
+                     grid: { color: gc() }, ticks: { color: tc() } },
+              y: { title: { display: true, text: 'Vertical Position (mm)', color: tc(), font: { size: 12 } },
+                     grid: { color: gc() }, ticks: { color: tc() } },
+            },
+          },
+        });
+      }
     </script>
 
     <!-- Small custom overrides for model-viewer and modal loading that Tailwind can't easily handle natively -->
@@ -134,6 +402,35 @@
         html {
             scroll-behavior: smooth;
         }
+
+        /* Image lightbox */
+        #img-lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.88);
+            z-index: 200;
+            cursor: zoom-out;
+            align-items: center;
+            justify-content: center;
+        }
+        #img-lightbox.open {
+            display: flex;
+        }
+        #img-lightbox img {
+            max-width: 92vw;
+            max-height: 92vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 60px rgba(0,0,0,0.7);
+        }
+        .zoomable {
+            cursor: zoom-in;
+            transition: opacity 0.15s;
+        }
+        .zoomable:hover {
+            opacity: 0.88;
+        }
     </style>
 </head>
 
@@ -205,126 +502,224 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                        <!-- Content Left -->
-                        <div class="lg:col-span-2 flex flex-col gap-10">
-                            <!-- Motivation / Background -->
-                            <section
-                                class="bg-white dark:bg-slate-900/50 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                <div class="flex items-center gap-3 mb-6">
-                                    <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
-                                    <h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">
-                                        Research Motivation & Background</h2>
+                        <!-- Row 1: Research Background (col-span-2) + Study Overview (col-span-1) -->
+
+                        <!-- Research Background -->
+                        <section
+                            class="lg:col-span-2 bg-white dark:bg-slate-900/50 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+                                <h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">
+                                    Research Background</h2>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                                <!-- Image Column -->
+                                <div
+                                    class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                    <img src="Photo/FT_intro.png" alt="Big Box Laboratory Setup" onclick="openLightbox(this.src)" style="cursor:zoom-in;"
+                                        class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500 cursor-pointer"
+                                        onerror="this.src='https://images.unsplash.com/photo-1581093196277-9f60898fae58?q=80&w=800&auto=format&fit=crop'; this.title='Please save your image as Photo/FT_intro.png';">
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                                    <!-- Image Column -->
-                                    <div
-                                        class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-                                        <img src="Photo/FT_intro.png" alt="Big Box Laboratory Setup"
-                                            class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500 cursor-pointer"
-                                            onerror="this.src='https://images.unsplash.com/photo-1581093196277-9f60898fae58?q=80&w=800&auto=format&fit=crop'; this.title='Please save your image as Photo/FT_intro.png';">
-                                    </div>
-
-                                    <!-- Text Column -->
-                                    <div class="flex flex-col gap-4">
-                                        <p class="text-slate-700 dark:text-slate-400 text-base leading-relaxed">
-                                            Understanding <span class="text-primary font-semibold">frost heave</span>
-                                            and <span class="text-primary font-semibold">thaw settlements</span> is
-                                            critical for the design of resilient infrastructure in cold regions.
-                                        </p>
-
-                                        <div class="bg-background-light dark:bg-slate-800 p-4 rounded-lg mt-2">
-                                            <h4 class="font-bold text-slate-900 dark:text-slate-100 mb-1">CFI Project
-                                                Foundation</h4>
-                                            <p class="text-sm text-slate-600 dark:text-slate-400">Establishment of the
-                                                structures lab in CARSA combining the 250 kN MTS machine, 300 kN
-                                                actuator, strong floor, and reaction frame.</p>
-                                        </div>
-                                        <div class="bg-background-light dark:bg-slate-800 p-4 rounded-lg">
-                                            <h4 class="font-bold text-slate-900 dark:text-slate-100 mb-1">The Big Box
-                                                Initiative</h4>
-                                            <p class="text-sm text-slate-600 dark:text-slate-400">Developing a
-                                                large-scale laboratory cyclic FTPL apparatus to simulate cyclical
-                                                thermal loading and structural loading.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <!-- Apparatus Overview -->
-                            <section
-                                class="bg-white dark:bg-slate-900/50 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-4">
-                                <div class="flex items-center gap-3 mb-6">
-                                    <span class="material-symbols-outlined text-primary text-3xl">architecture</span>
-                                    <h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">
-                                        Apparatus Overview & Dimensions</h2>
-                                </div>
-
-                                <div class="flex flex-col gap-6">
-                                    <div
-                                        class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-                                        <img src="Photo/Box_overall.png"
-                                            alt="Overall Appearance of Big Box Testing Apparatus"
-                                            class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-[1.02] transition-transform duration-500 cursor-zoom-in"
-                                            onerror="this.src='https://images.unsplash.com/photo-1581093196277-9f60898fae58?q=80&w=800&auto=format&fit=crop'; this.title='Please save your image as Photo/Box_overall.png';">
-                                    </div>
-
-                                    <p
-                                        class="text-slate-700 dark:text-slate-400 text-base leading-relaxed bg-background-light dark:bg-slate-800 p-5 rounded-lg border-l-4 border-primary">
-                                        The diagram above illustrates the overall appearance and scale of the whole
-                                        testing apparatus. Designed to accommodate large-scale subgrade infrastructure
-                                        tests, the dimensional configuration is carefully calibrated to minimize
-                                        boundary effects while ensuring robust structural and thermal analysis
-                                        capabilities.
+                                <!-- Text Column -->
+                                <div class="flex flex-col gap-4">
+                                    <p class="text-slate-700 dark:text-slate-400 text-base leading-relaxed">
+                                        Understanding <span class="text-primary font-semibold">frost heave</span>
+                                        and <span class="text-primary font-semibold">thaw settlements</span> is
+                                        critical for the design of resilient infrastructure in cold regions.
                                     </p>
+
+                                    <div class="bg-background-light dark:bg-slate-800 p-4 rounded-lg">
+                                        <h4 class="font-bold text-slate-900 dark:text-slate-100 mb-1">The Big Box
+                                            Initiative</h4>
+                                        <p class="text-sm text-slate-600 dark:text-slate-400">Developing a
+                                            large-scale laboratory cyclic FTPL apparatus to simulate cyclical
+                                            thermal loading and structural loading.</p>
+                                    </div>
                                 </div>
-                            </section>
+                            </div>
+                        </section>
+
+                        <!-- Study Overview -->
+                        <div class="bg-primary text-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-bold mb-4">Study Overview</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between border-b border-white/20 pb-2">
+                                    <span class="text-white/70 text-sm">Institution</span>
+                                    <span class="font-medium text-sm">University of Victoria</span>
+                                </div>
+                                <div class="flex justify-between border-b border-white/20 pb-2">
+                                    <span class="text-white/70 text-sm">Department</span>
+                                    <span class="font-medium text-sm">Civil Engineering</span>
+                                </div>
+                                <div class="flex justify-between border-b border-white/20 pb-2">
+                                    <span class="text-white/70 text-sm">Location</span>
+                                    <span class="font-medium text-sm">CARSA Structures Lab</span>
+                                </div>
+                                <div class="flex justify-between border-b border-white/20 pb-2">
+                                    <span class="text-white/70 text-sm">Partner</span>
+                                    <span class="font-medium text-sm">Stratum Logics</span>
+                                </div>
+                                <div class="flex justify-between border-b border-white/20 pb-2">
+                                    <span class="text-white/70 text-sm">Focus</span>
+                                    <span class="font-medium text-sm">Unpaved cold-region roads</span>
+                                </div>
+                                <div class="flex justify-between pb-2">
+                                    <span class="text-white/70 text-sm">Estimated Cost</span>
+                                    <span class="font-medium text-sm">$350,000+</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Sidebar Right -->
-                        <div class="flex flex-col gap-6">
-                            <div class="bg-primary text-white p-6 rounded-xl shadow-lg">
-                                <h3 class="text-xl font-bold mb-4">Study Overview</h3>
-                                <div class="space-y-4">
-                                    <div class="flex justify-between border-b border-white/20 pb-2">
-                                        <span class="text-white/70 text-sm">Institution</span>
-                                        <span class="font-medium text-sm">University of Victoria</span>
-                                    </div>
-                                    <div class="flex justify-between border-b border-white/20 pb-2">
-                                        <span class="text-white/70 text-sm">Partner</span>
-                                        <span class="font-medium text-sm">Stratum Logics</span>
-                                    </div>
-                                    <div class="flex justify-between pb-2">
-                                        <span class="text-white/70 text-sm">Focus</span>
-                                        <span class="font-medium text-sm">Unpaved cold-region roads</span>
-                                    </div>
-                                </div>
+                        <!-- Row 2: Apparatus Overview (col-span-2) + Geocell Reinforcement (col-span-1) -->
+
+                        <!-- Apparatus Overview -->
+                        <section
+                            class="lg:col-span-2 bg-white dark:bg-slate-900/50 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="material-symbols-outlined text-primary text-3xl">architecture</span>
+                                <h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">
+                                    Apparatus Overview & Dimensions</h2>
                             </div>
 
-                            <!-- Geocell Components -->
-                            <div
-                                class="bg-white dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-4">
+                            <div class="flex flex-col gap-6">
                                 <div
-                                    class="flex items-center gap-2 mb-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-                                    <span class="material-symbols-outlined text-primary">hive</span>
-                                    <h3 class="font-bold text-slate-900 dark:text-slate-100">Geocell Reinforcement</h3>
+                                    class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                    <img src="Photo/Box_overall.png" onclick="openLightbox(this.src)"
+                                        alt="Overall Appearance of Big Box Testing Apparatus"
+                                        class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-[1.02] transition-transform duration-500 cursor-zoom-in"
+                                        onerror="this.src='https://images.unsplash.com/photo-1581093196277-9f60898fae58?q=80&w=800&auto=format&fit=crop'; this.title='Please save your image as Photo/Box_overall.png';">
                                 </div>
-                                <div class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
-                                    <img src="Photo/Geocell_components.png" alt="Geocell Components Diagram"
-                                        class="w-full h-auto object-contain cursor-zoom-in hover:scale-105 transition-transform duration-500"
-                                        onerror="this.src='https://images.unsplash.com/photo-1581093196277-9f60898fae58?q=80&w=800&auto=format&fit=crop';">
-                                </div>
-                                <p
-                                    class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-800 p-3 rounded-md border-l-2 border-primary">
-                                    The figure above demonstrates the Novel Polymeric Alloy (NPA) geocell matrix
-                                    integrated into the subgrade layer. This advanced 3D cellular confinement system
-                                    significantly enhances load distribution efficiency and mitigates differential frost
-                                    heave by restraining lateral displacement of the infill materials under cyclic
-                                    environmental and mechanical loading conditions.
-                                </p>
                             </div>
+                        </section>
+
+                        <!-- Geocell Components -->
+                        <div
+                            class="bg-white dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-4">
+                            <div
+                                class="flex items-center gap-2 mb-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                                <span class="material-symbols-outlined text-primary">hive</span>
+                                <h3 class="font-bold text-slate-900 dark:text-slate-100">Geocell Reinforcement</h3>
+                            </div>
+                            <div class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+                                <img src="Photo/Geocell_components.png" alt="Geocell Components Diagram" onclick="openLightbox(this.src)"
+                                    class="w-full h-auto object-contain cursor-zoom-in hover:scale-105 transition-transform duration-500"
+                                    onerror="this.src='https://images.unsplash.com/photo-1581093196277-9f60898fae58?q=80&w=800&auto=format&fit=crop';">
+                            </div>
+                            <div class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+                                <img src="Photo/Geocell_plan.jpg" alt="Geocell Plan View — 210 mm × 245 mm cell dimensions" onclick="openLightbox(this.src)"
+                                    class="w-full h-auto object-contain cursor-zoom-in hover:scale-105 transition-transform duration-500">
+                            </div>
+                            <p
+                                class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-800 p-3 rounded-md border-l-2 border-primary">
+                                Test materials used in this study were novel polymeric alloy (NPA) Type-C geocells, donated by PRS Geo-Technologies®. NPA is a composite polymer alloy comprised of a high-performance engineering thermoplastic with a polyolefin blend (polypropylene, polyethylene). The blend is immiscible with high-performance nano-polymer compound, which is dispersed in a polyolefin matrix.
+                            </p>
                         </div>
                     </div>
+
+                    <!-- Applications Section -->
+                    <section class="bg-white dark:bg-slate-900/50 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-12">
+                        <div class="flex items-center gap-3 mb-8">
+                            <span class="material-symbols-outlined text-primary text-3xl">grid_view</span>
+                            <h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">Geocell Applications</h2>
+                        </div>
+
+                        <div class="flex flex-col gap-8">
+
+                            <!-- Base Stabilization -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md cursor-zoom-in" onclick="openLightbox(this.querySelector('img').src)">
+                                    <img src="https://baselok.com/wp-content/uploads/2020/05/BaseLok-GeoCell-Base-3D-render.png"
+                                         alt="GeoCell Base Stabilization"
+                                         class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+                                         onerror="this.parentElement.style.display='none'">
+                                </div>
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                            <i class="fa-solid fa-road"></i>
+                                        </div>
+                                        <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100">Base Stabilization</h3>
+                                    </div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        GeoCell is a confinement system that outperforms conventional crushed stone sections, offering an efficient construction method for access roads over soft ground even in wet weather conditions. It can also be used to reinforce paved surfaces.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <hr class="border-slate-100 dark:border-slate-800">
+
+                            <!-- Slope Reinforcement -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div class="flex flex-col gap-3 md:order-1">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 flex-shrink-0">
+                                            <i class="fa-solid fa-mountain"></i>
+                                        </div>
+                                        <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100">Slope Reinforcement</h3>
+                                    </div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        For slope applications, GeoCell can be filled with angular rock, concrete, or vegetated soil. The cells contain the infill material and form a stable erosion-resistant layer that conforms to the subgrade geometry. When vegetated or rock-filled, the system remains permeable, reducing surface runoff.
+                                    </p>
+                                </div>
+                                <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md cursor-zoom-in md:order-2" onclick="openLightbox(this.querySelector('img').src)">
+                                    <img src="https://baselok.com/wp-content/uploads/2020/05/BaseLok-GeoCell-Slope-3D-render.png"
+                                         alt="GeoCell Slope Reinforcement"
+                                         class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+                                         onerror="this.parentElement.style.display='none'">
+                                </div>
+                            </div>
+
+                            <hr class="border-slate-100 dark:border-slate-800">
+
+                            <!-- Channel Protection -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md cursor-zoom-in" onclick="openLightbox(this.querySelector('img').src)">
+                                    <img src="https://baselok.com/wp-content/uploads/2020/05/BaseLok-GeoCell-Channel-3D-render.png"
+                                         alt="GeoCell Channel Protection"
+                                         class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+                                         onerror="this.parentElement.style.display='none'">
+                                </div>
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-500 flex-shrink-0">
+                                            <i class="fa-solid fa-water"></i>
+                                        </div>
+                                        <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100">Channel Protection</h3>
+                                    </div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        GeoCell can be installed on slopes up to 60° and in channels with high flow velocities. Infill material selection determines the velocity rating: angular rock for up to 10 ft/s (3 m/s), vegetated soil up to 20 ft/s (6 m/s), and concrete for velocities exceeding 20 ft/s (6 m/s).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <hr class="border-slate-100 dark:border-slate-800">
+
+                            <!-- Retaining Walls -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div class="flex flex-col gap-3 md:order-1">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 flex-shrink-0">
+                                            <i class="fa-solid fa-layer-group"></i>
+                                        </div>
+                                        <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100">Retaining Walls</h3>
+                                    </div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        GeoCell is suited for both cut and fill retaining wall applications. The flexible HDPE panels are custom-dimensioned by the project engineer and can be installed around curves, pipes, and irregular structures. Panels can be stacked vertically or stair-stepped at each layer to create a green wall with exposed cells for vegetation.
+                                    </p>
+                                </div>
+                                <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md cursor-zoom-in md:order-2" onclick="openLightbox(this.querySelector('img').src)">
+                                    <img src="https://baselok.com/wp-content/uploads/2020/05/BaseLok-GeoCell-Wall-3D-render.png"
+                                         alt="GeoCell Retaining Walls"
+                                         class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+                                         onerror="this.parentElement.style.display='none'">
+                                </div>
+                            </div>
+
+                        </div>
+                    </section>
+
                 </section>
 
                 <!-- SECTION: Instrumentation -->
@@ -335,10 +730,6 @@
                         <h2 class="text-slate-900 dark:text-slate-100 text-3xl font-bold tracking-tight">Instrumentation
                             & Specifications</h2>
                     </div>
-                    <p class="text-slate-600 dark:text-slate-400 mb-8 max-w-2xl text-lg">Select any deployed sensor
-                        below to view its specific technical parameters and corresponding installation site photos
-                        mapped dynamically from the apparatus logs.</p>
-
                     <!-- On Box Sub-section -->
                     <div class="mb-16">
                         <h3
@@ -413,14 +804,111 @@
                         <span class="material-symbols-outlined text-primary text-3xl">route</span>
                         <div>
                             <h2 class="text-slate-900 dark:text-slate-100 text-3xl font-bold tracking-tight">
-                                Experimental Methodology</h2>
-                            <p class="text-slate-500 dark:text-slate-400 mt-1">A structured two-phase protocol for
-                                assessing material durability.</p>
+                                Logistics & Methodology</h2>
+                            <p class="text-slate-500 dark:text-slate-400 mt-1">The following figures illustrate the soil preparation procedure and the freeze–thaw plate loading test process. The soil preparation procedure will be repeated for a total of seven lifts.</p>
                         </div>
                     </div>
 
+                    <!-- Part 1: Soil Preparation -->
+                    <div class="mt-8 mb-2">
+                        <h3 class="text-lg font-bold text-primary tracking-wide uppercase flex items-center gap-2">
+                            <span class="material-symbols-outlined text-xl">layers</span>Soil Preparation
+                        </h3>
+                    </div>
                     <div
-                        class="space-y-12 mt-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+                        class="space-y-12 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+
+                        <!-- Prep 1: Logistics - Text LEFT, Photo RIGHT -->
+                        <div class="relative flex flex-col md:flex-row items-center justify-between group is-active">
+                            <div class="w-[calc(100%-4rem)] ml-auto md:ml-0 md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <h4 class="font-bold text-slate-900 dark:text-slate-100 text-lg mb-1">Logistics</h4>
+                                <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Site Coordination & Planning</p>
+                                <p class="text-slate-700 dark:text-slate-300">Material sourcing and on-site logistics were coordinated to ensure timely delivery of the granular subgrade and base course materials to CARSA. Site access, equipment staging, and material storage were planned to minimize lab downtime during the filling sequence.</p>
+                            </div>
+                            <div class="absolute left-5 md:left-1/2 -translate-x-[calc(50%-0.5px)] flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-primary text-slate-500 group-[.is-active]:text-white shadow shrink-0">
+                                <span class="material-symbols-outlined text-xl">map</span>
+                            </div>
+                            <div class="hidden md:block md:w-[calc(50%-2.5rem)] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                <img src="Photo/prep_logistics.jpg" alt="Logistics" onclick="openLightbox(this.src)" style="cursor:zoom-in;"
+                                    class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-105 transition-transform duration-500">
+                            </div>
+                        </div>
+
+                        <!-- Prep 2: Mixing - Text RIGHT, Photo LEFT -->
+                        <div class="relative flex flex-col md:flex-row-reverse items-center justify-between group is-active">
+                            <div class="w-[calc(100%-4rem)] ml-auto md:mr-0 md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <h4 class="font-bold text-slate-900 dark:text-slate-100 text-lg mb-1">Mixing</h4>
+                                <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Moisture Conditioning</p>
+                                <p class="text-slate-700 dark:text-slate-300">Granular materials were blended in a drum mixer and conditioned to a target moisture content. Measured water additions were incorporated to achieve uniform hydration throughout the aggregate, ensuring consistent compaction behaviour across successive lifts.</p>
+                            </div>
+                            <div class="absolute left-5 md:left-1/2 -translate-x-[calc(50%-0.5px)] flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-primary text-slate-500 group-[.is-active]:text-white shadow shrink-0">
+                                <span class="material-symbols-outlined text-xl">autorenew</span>
+                            </div>
+                            <div class="hidden md:block md:w-[calc(50%-2.5rem)] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                <img src="Photo/prep_mixing.jpg" alt="Mixing" onclick="openLightbox(this.src)" style="cursor:zoom-in;"
+                                    class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-105 transition-transform duration-500">
+                            </div>
+                        </div>
+
+                        <!-- Prep 3: Transportation - Text LEFT, Photo RIGHT -->
+                        <div class="relative flex flex-col md:flex-row items-center justify-between group is-active">
+                            <div class="w-[calc(100%-4rem)] ml-auto md:ml-0 md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <h4 class="font-bold text-slate-900 dark:text-slate-100 text-lg mb-1">Transportation</h4>
+                                <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Material Placement</p>
+                                <p class="text-slate-700 dark:text-slate-300">Mixed material was transported into the lab and placed into the test box using a compact excavator. Lifts were deposited in controlled increments to maintain layer uniformity and avoid disturbing previously embedded instrumentation.</p>
+                            </div>
+                            <div class="absolute left-5 md:left-1/2 -translate-x-[calc(50%-0.5px)] flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-primary text-slate-500 group-[.is-active]:text-white shadow shrink-0">
+                                <span class="material-symbols-outlined text-xl">local_shipping</span>
+                            </div>
+                            <div class="hidden md:block md:w-[calc(50%-2.5rem)] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                <img src="Photo/prep_transport.jpg" alt="Transportation" onclick="openLightbox(this.src)" style="cursor:zoom-in;"
+                                    class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-105 transition-transform duration-500">
+                            </div>
+                        </div>
+
+                        <!-- Prep 4: Raking & Compacting - Text RIGHT, Photo LEFT -->
+                        <div class="relative flex flex-col md:flex-row-reverse items-center justify-between group is-active">
+                            <div class="w-[calc(100%-4rem)] ml-auto md:mr-0 md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <h4 class="font-bold text-slate-900 dark:text-slate-100 text-lg mb-1">Raking & Compacting</h4>
+                                <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Lift Densification</p>
+                                <p class="text-slate-700 dark:text-slate-300">Each lift was manually raked to a uniform thickness before compaction with a vibratory plate compactor. Multiple passes were applied to achieve the target dry density, replicating field construction practice and ensuring repeatable specimen conditions.</p>
+                            </div>
+                            <div class="absolute left-5 md:left-1/2 -translate-x-[calc(50%-0.5px)] flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-primary text-slate-500 group-[.is-active]:text-white shadow shrink-0">
+                                <span class="material-symbols-outlined text-xl">construction</span>
+                            </div>
+                            <div class="hidden md:block md:w-[calc(50%-2.5rem)] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                <img src="Photo/prep_compacting.jpg" alt="Raking and Compacting" onclick="openLightbox(this.src)" style="cursor:zoom-in;"
+                                    class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-105 transition-transform duration-500">
+                            </div>
+                        </div>
+
+                        <!-- Prep 5: Quality Control - Text LEFT, Photo RIGHT -->
+                        <div class="relative flex flex-col md:flex-row items-center justify-between group is-active">
+                            <div class="w-[calc(100%-4rem)] ml-auto md:ml-0 md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <h4 class="font-bold text-slate-900 dark:text-slate-100 text-lg mb-1">Quality Control</h4>
+                                <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Density & Sensor Verification</p>
+                                <p class="text-slate-700 dark:text-slate-300">Field density and moisture measurements were taken at each lift to verify compliance with the target compaction specifications. Sensor continuity and seating were also confirmed at each stage before the next lift was placed, ensuring data integrity throughout the specimen build.</p>
+                            </div>
+                            <div class="absolute left-5 md:left-1/2 -translate-x-[calc(50%-0.5px)] flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-primary text-slate-500 group-[.is-active]:text-white shadow shrink-0">
+                                <span class="material-symbols-outlined text-xl">fact_check</span>
+                            </div>
+                            <div class="hidden md:block md:w-[calc(50%-2.5rem)] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
+                                <img src="Photo/prep_qc.jpg" alt="Quality Control" onclick="openLightbox(this.src)" style="cursor:zoom-in;"
+                                    class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-105 transition-transform duration-500">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Part 2: Testing Program -->
+                    <div class="mt-12 mb-2">
+                        <h3 class="text-lg font-bold text-primary tracking-wide uppercase flex items-center gap-2">
+                            <span class="material-symbols-outlined text-xl">science</span>Testing Program
+                        </h3>
+                    </div>
+                    <div
+                        class="space-y-12 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+
                         <!-- Phase 1: Freeze-Thaw - Text LEFT, Photo RIGHT -->
                         <div class="relative flex flex-col md:flex-row items-center justify-between group is-active">
                             <!-- Text card on the LEFT -->
@@ -443,7 +931,7 @@
                             <!-- Photo on the RIGHT -->
                             <div
                                 class="hidden md:block md:w-[calc(50%-2.5rem)] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-                                <img src="Photo/freeze_thaw_setup.png" alt="Freeze-Thaw Test Setup"
+                                <img src="Photo/freeze_thaw_setup.png" alt="Freeze-Thaw Test Setup" onclick="openLightbox(this.src)" style="cursor:zoom-in;"
                                     class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-105 transition-transform duration-500">
                             </div>
                         </div>
@@ -469,7 +957,7 @@
                             <!-- Photo on the RIGHT -->
                             <div
                                 class="hidden md:block md:w-[calc(50%-2.5rem)] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md">
-                                <img src="Photo/plate_loading_setup.png" alt="Plate Loading Test Setup"
+                                <img src="Photo/plate_loading_setup.png" alt="Plate Loading Test Setup" onclick="openLightbox(this.src)" style="cursor:zoom-in;"
                                     class="w-full h-auto object-contain bg-white dark:bg-slate-900 hover:scale-105 transition-transform duration-500">
                             </div>
                         </div>
@@ -488,72 +976,64 @@
                         <!-- Temperature -->
                         <div
                             class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <div
-                                class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                                <div class="flex items-center gap-3">
-                                    <span
-                                        class="material-symbols-outlined text-amber-500 text-3xl">device_thermostat</span>
-                                    <h3 class="font-bold text-xl text-slate-900 dark:text-slate-100">Temperature</h3>
-                                </div>
-                                <span
-                                    class="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium">
-                                    Loaded from results folder
-                                </span>
+                            <div class="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                                <span class="material-symbols-outlined text-amber-500 text-2xl">device_thermostat</span>
+                                <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100">Temperature</h3>
                             </div>
-                            <div
-                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
-                                <img id="img-temperature" alt="Temperature result figure"
-                                    class="max-w-full max-h-[600px] hidden object-contain">
-                                <p id="placeholder-temperature" class="text-slate-400 text-sm font-medium">Awaiting Data
-                                    Figure</p>
-                            </div>
-                        </div>
-
-                        <!-- Temperature Profile -->
-                        <div
-                            class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <div
-                                class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                                <div class="flex items-center gap-3">
-                                    <span class="material-symbols-outlined text-sky-500 text-3xl">water_drop</span>
-                                    <h3 class="font-bold text-xl text-slate-900 dark:text-slate-100">Temperature Profile
-                                    </h3>
-                                </div>
-                                <span
-                                    class="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium">
-                                    Loaded from results folder
-                                </span>
-                            </div>
-                            <div
-                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
-                                <img id="img-moisture" alt="Temperature profile result figure"
-                                    class="max-w-full max-h-[600px] hidden object-contain">
-                                <p id="placeholder-moisture" class="text-slate-400 text-sm font-medium">Awaiting Data
-                                    Figure</p>
+                            <div class="relative w-full">
+                              <div class="w-full bg-white dark:bg-slate-900 rounded-lg overflow-hidden" style="min-height:480px;padding:4px 0;">
+                                <canvas id="chart-temperature" style="width:100%;height:480px;"></canvas>
+                              </div>
+                              <div class="flex items-center justify-between mt-1 px-1">
+                                <span class="text-xs text-slate-400 dark:text-slate-500">Scroll to zoom &nbsp;&bull;&nbsp; Drag to pan</span>
+                                <button onclick="resetChartZoom('chart-temperature')" class="text-xs text-primary hover:underline font-medium">Reset zoom</button>
+                              </div>
                             </div>
                         </div>
 
                         <!-- Frost Heave -->
                         <div
                             class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                            <div
-                                class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                                <div class="flex items-center gap-3">
-                                    <span class="material-symbols-outlined text-emerald-500 text-3xl">compress</span>
-                                    <h3 class="font-bold text-xl text-slate-900 dark:text-slate-100">Frost heave</h3>
+                            <div class="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                                <span class="material-symbols-outlined text-emerald-500 text-2xl">compress</span>
+                                <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100">Frost Heave</h3>
+                            </div>
+                            <div class="relative w-full">
+                              <div class="w-full bg-white dark:bg-slate-900 rounded-lg overflow-hidden" style="height:480px;padding:4px 0;">
+                                <canvas id="chart-frost-heave" style="width:100%;height:480px;"></canvas>
+                              </div>
+                              <div class="flex items-center justify-between mt-1 px-1">
+                                <span class="text-xs text-slate-400 dark:text-slate-500">Scroll to zoom &nbsp;&bull;&nbsp; Drag to pan</span>
+                                <button onclick="resetChartZoom('chart-frost-heave')" class="text-xs text-primary hover:underline font-medium">Reset zoom</button>
+                              </div>
+                            </div>
+                        </div>
+
+                        <!-- Water Content Profile + Temperature Profile (side by side) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            <!-- Water Content Profile -->
+                            <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div class="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                                    <span class="material-symbols-outlined text-sky-500 text-2xl">water_drop</span>
+                                    <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100">Water Content Profile</h3>
                                 </div>
-                                <span
-                                    class="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium">
-                                    Loaded from results folder
-                                </span>
+                                <div class="w-full bg-white dark:bg-slate-900 rounded-lg overflow-hidden" style="height:380px;padding:4px 0;">
+                                    <canvas id="chart-water-content" style="width:100%;height:380px;"></canvas>
+                                </div>
                             </div>
-                            <div
-                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
-                                <img id="img-frost-heave" alt="Frost heave result figure"
-                                    class="max-w-full max-h-[600px] hidden object-contain">
-                                <p id="placeholder-frost-heave" class="text-slate-400 text-sm font-medium">Awaiting Data
-                                    Figure</p>
+
+                            <!-- Temperature Profile -->
+                            <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div class="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                                    <span class="material-symbols-outlined text-violet-500 text-2xl">stacked_line_chart</span>
+                                    <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100">Temperature Profile</h3>
+                                </div>
+                                <div class="w-full bg-white dark:bg-slate-900 rounded-lg overflow-hidden" style="height:380px;padding:4px 0;">
+                                    <canvas id="chart-temp-profile" style="width:100%;height:380px;"></canvas>
+                                </div>
                             </div>
+
                         </div>
 
                         <!-- DFOS Strain at Bases -->
@@ -570,12 +1050,11 @@
                                     Loaded from results folder
                                 </span>
                             </div>
-                            <div
-                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
+                            <div class="w-full bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden" style="height:420px;">
                                 <img id="img-dfos-strain" alt="DFOS base strain result figure"
-                                    class="max-w-full max-h-[600px] hidden object-contain">
-                                <p id="placeholder-dfos-strain" class="text-slate-400 text-sm font-medium">Awaiting Data
-                                    Figure</p>
+                                    class="max-w-full max-h-full hidden object-contain zoomable"
+                                    onclick="openLightbox(this.src)">
+                                <p id="placeholder-dfos-strain" class="text-slate-400 text-sm font-medium">Awaiting Data Figure</p>
                             </div>
                         </div>
 
@@ -594,12 +1073,11 @@
                                     Loaded from results folder
                                 </span>
                             </div>
-                            <div
-                                class="w-full min-h-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden">
+                            <div class="w-full bg-slate-50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 overflow-hidden" style="height:420px;">
                                 <img id="img-dfos-temp" alt="DFOS subgrade strain result figure"
-                                    class="max-w-full max-h-[600px] hidden object-contain">
-                                <p id="placeholder-dfos-temp" class="text-slate-400 text-sm font-medium">Awaiting Data
-                                    Figure</p>
+                                    class="max-w-full max-h-full hidden object-contain zoomable"
+                                    onclick="openLightbox(this.src)">
+                                <p id="placeholder-dfos-temp" class="text-slate-400 text-sm font-medium">Awaiting Data Figure</p>
                             </div>
                         </div>
 
@@ -657,7 +1135,7 @@
                             class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
                             <span class="material-symbols-outlined text-base">list_alt</span> Spec Sheet
                         </h3>
-                        <div id="modalSensorSpecs" class="space-y-3">
+                        <div id="modalSensorSpecs" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <!-- Injected via JS -->
                         </div>
                     </div>
@@ -669,7 +1147,7 @@
                             <span class="material-symbols-outlined text-base">photo_camera</span> Related Imagery
                         </h3>
                         <div id="modalSensorPhotos"
-                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
+                            class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <!-- Injected via JS -->
                         </div>
                     </div>
@@ -678,7 +1156,148 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+    /* Temperature chart – data from Temprature sheet of Website_Result compilation_thawing.xlsx */
+    let _tempChartInit = false;
+    async function initTemperatureChart() {
+      if (_tempChartInit) return;
+      _tempChartInit = true;
+      const d      = await getResultsData();
+      const RAW    = d.temperature.rows;
+      const NAMES  = ["Bottom right (1300 mm)", "Bottom left (1300 mm)", "Subgrade 1st lift (1100 mm)", "Subgrade 3rd lift (800 mm)", "Base middle (150 mm)", "Top front", "Top back", "Ambient", "DFOS 400 mm", "DFOS base middle"];
+      const COLORS = ["#ef4444","#f97316","#f59e0b","#84cc16","#10b981","#06b6d4","#3b82f6","#8b5cf6","#ec4899","#64748b"];
+      const MKRS   = [[3.75,-15.0],[3.75,22.0],[6.667,-15.0],[6.667,22.0],[11.667,-15.0],[11.667,22.0],[32.5,-15.0],[32.5,22.0],[43.0,-15.0],[43.0,22.0],[60.0,-15.0],[60.0,22.0]];
+      const dark = () => document.documentElement.classList.contains('dark');
+      const gc   = () => dark() ? 'rgba(148,163,184,0.15)' : 'rgba(0,0,0,0.08)';
+      const tc   = () => dark() ? '#94a3b8' : '#475569';
+
+      const series = NAMES.map((name, i) => ({
+        label: name,
+        data: RAW.map(r => ({ x: r[0], y: r[i + 1] })),
+        borderColor: COLORS[i],
+        backgroundColor: 'transparent',
+        showLine: true,
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: COLORS[i],
+        tension: 0,
+        spanGaps: true,
+      }));
+
+      /* Vertical event-marker lines */
+      const markerLines = {};
+      MKRS.forEach(([x, y]) => {
+        if (!markerLines[x]) markerLines[x] = [];
+        markerLines[x].push(y);
+      });
+      Object.entries(markerLines).forEach(([x, ys]) => {
+        series.push({
+          label: `Day ${x}`,
+          data: ys.map(y => ({ x: parseFloat(x), y })),
+          borderColor: '#000000',
+          backgroundColor: 'transparent',
+          showLine: true,
+          borderWidth: 1,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          tension: 0,
+          spanGaps: false,
+          tooltip: { callbacks: { label: () => null } },
+        });
+      });
+
+      new Chart(document.getElementById('chart-temperature'), {
+        type: 'scatter',
+        data: { datasets: series },
+        plugins: [makeMarkerLabelsPlugin(SHARED_MKRS)],
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 400 },
+          layout: { padding: { top: 30 } },
+          interaction: {
+            mode: 'index',
+            intersect: false,
+            axis: 'x',
+          },
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              filter: item => !item.dataset.label.startsWith('Day '),
+              backgroundColor: dark() ? '#1e293b' : '#ffffff',
+              borderColor: dark() ? '#334155' : '#e2e8f0',
+              borderWidth: 1,
+              titleColor: tc(),
+              bodyColor: tc(),
+              padding: 12,
+              callbacks: {
+                title: items => `Day ${items[0].parsed.x.toFixed(2)}`,
+                label: item => {
+                  const val = item.parsed.y;
+                  if (val === null || val === undefined) return null;
+                  return `  ${item.dataset.label}: ${val.toFixed(2)} °C`;
+                },
+              },
+            },
+            zoom: {
+              zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+              pan:  { enabled: true, mode: 'x' },
+              limits: { x: { min: 'original', max: 'original' } },
+            },
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              title: { display: true, text: 'Time (days)', color: tc(), font: { size: 12 } },
+              grid: { color: gc() },
+              ticks: { color: tc(), maxTicksLimit: 14 },
+            },
+            y: {
+              title: { display: true, text: 'Temperature (°C)', color: tc(), font: { size: 12 } },
+              grid: { color: gc() },
+              ticks: { color: tc() },
+            },
+          },
+        },
+      });
+    }
+    </script>
+    <!-- Image lightbox -->
+    <div id="img-lightbox" onclick="this.classList.remove('open')">
+        <img id="lightbox-img" src="" alt="Enlarged view">
+    </div>
+
+    <!-- Back to top button -->
+    <button id="back-to-top"
+        onclick="document.querySelector('.page-section.active')?.scrollTo({top:0,behavior:'smooth'}); window.scrollTo({top:0,behavior:'smooth'});"
+        class="fixed bottom-8 right-8 z-50 w-11 h-11 rounded-full bg-primary text-white shadow-lg flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300"
+        aria-label="Back to top">
+        <span class="material-symbols-outlined text-xl">arrow_upward</span>
+    </button>
+    <style>
+        #back-to-top.visible { opacity: 1; pointer-events: auto; }
+    </style>
+    <script>
+        (function() {
+            const btn = document.getElementById('back-to-top');
+            function checkScroll() {
+                // Check both window scroll and active section scroll
+                const active = document.querySelector('.page-section.active');
+                const scrolled = window.scrollY > 200 || (active && active.scrollTop > 200);
+                btn.classList.toggle('visible', scrolled);
+            }
+            window.addEventListener('scroll', checkScroll, { passive: true });
+            document.querySelectorAll('.page-section').forEach(s => {
+                s.addEventListener('scroll', checkScroll, { passive: true });
+            });
+        })();
+    </script>
+    <script src="script.js?v=2"></script>
 </body>
 
 </html>
