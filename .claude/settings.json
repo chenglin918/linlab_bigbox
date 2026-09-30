@@ -14,7 +14,12 @@
       "Bash(curl -s \"https://baselok.com/geocell/\")",
       "Read(//c/Users/16895/.claude/projects/d--OneDrive---University-of-Victoria-OneDrive---University-of-Victoria-Documents-GitHub-linlab_bigbox/93d24f7b-96ce-46a6-92b7-28a224c53a57/tool-results/**)",
       "Read(//c/Users/16895/.claude/**)",
-      "Bash(python3 C:/Users/16895/AppData/Local/Temp/apply_all_changes.py)"
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/apply_all_changes.py)",
+      "PowerShell(git fetch origin)",
+      "PowerShell(git config user.name)",
+      "PowerShell(git config user.email)",
+      "PowerShell(gh run list --repo chenglin918/linlab_bigbox --limit 3)",
+      "PowerShell($r = Invoke-RestMethod \"https://api.github.com/repos/chenglin918/linlab_bigbox/actions/runs?per_page=3\"; $r.workflow_runs | Select-Object head_sha, status, conclusion, created_at | Format-Table -AutoSize)"
     ]
   }
 }

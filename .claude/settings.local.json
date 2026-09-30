@@ -2,7 +2,33 @@
   "permissions": {
     "allow": [
       "Bash(python3 -c ':*)",
-      "Bash(python3 C:/Users/16895/AppData/Local/Temp/gen_temp_chart.py)"
+      "Bash(python3 C:/Users/16895/AppData/Local/Temp/gen_temp_chart.py)",
+      "Bash(python -c ' *)",
+      "Bash(kill 1477)",
+      "Bash(python3 -c \"import playwright; print\\('playwright available'\\)\")",
+      "Bash(where.exe msedge *)",
+      "Bash(where.exe chrome *)",
+      "Bash(npx --version)",
+      "Bash(python3 -c ' *)",
+      "Bash(python -m http.server 8127 --bind 127.0.0.1)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:8127/index.html)",
+      "Bash(python \"C:\\\\Users\\\\16895\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--OneDrive---University-of-Victoria-MPhD--2023--Yongxuan-Gao-Big--box-website-linlab-bigbox\\\\6179a09b-d6a3-41cc-8a74-20ed24567243\\\\scratchpad\\\\measure.py\")",
+      "Bash(python \"C:\\\\Users\\\\16895\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--OneDrive---University-of-Victoria-MPhD--2023--Yongxuan-Gao-Big--box-website-linlab-bigbox\\\\6179a09b-d6a3-41cc-8a74-20ed24567243\\\\scratchpad\\\\iterate.py\")",
+      "Bash(python \"C:\\\\Users\\\\16895\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--OneDrive---University-of-Victoria-MPhD--2023--Yongxuan-Gao-Big--box-website-linlab-bigbox\\\\6179a09b-d6a3-41cc-8a74-20ed24567243\\\\scratchpad\\\\iterate2.py\")",
+      "Bash(python \"C:\\\\Users\\\\16895\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--OneDrive---University-of-Victoria-MPhD--2023--Yongxuan-Gao-Big--box-website-linlab-bigbox\\\\6179a09b-d6a3-41cc-8a74-20ed24567243\\\\scratchpad\\\\screenshot.py\")",
+      "Bash(pkill -f \"http.server 8127\")",
+      "Bash(curl -sL -o base.png \"https://baselok.com/wp-content/uploads/2020/05/BaseLok-GeoCell-Base-3D-render.png\" -A \"Mozilla/5.0\")",
+      "Bash(curl -sL -o slope.png \"https://baselok.com/wp-content/uploads/2020/05/BaseLok-GeoCell-Slope-3D-render.png\" -A \"Mozilla/5.0\")",
+      "Bash(curl -sL -o channel.png \"https://baselok.com/wp-content/uploads/2020/05/BaseLok-GeoCell-Channel-3D-render.png\" -A \"Mozilla/5.0\")",
+      "Bash(curl -sL -o wall.png \"https://baselok.com/wp-content/uploads/2020/05/BaseLok-GeoCell-Wall-3D-render.png\" -A \"Mozilla/5.0\")",
+      "Bash(python \"C:\\\\Users\\\\16895\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--OneDrive---University-of-Victoria-MPhD--2023--Yongxuan-Gao-Big--box-website-linlab-bigbox\\\\6179a09b-d6a3-41cc-8a74-20ed24567243\\\\scratchpad\\\\heading_check.py\")",
+      "Bash(python3 -c \"import matplotlib\")",
+      "Bash(python3 recolor.py)",
+      "Bash(python3 recolor2.py)",
+      "Bash(python3 recolor3.py)",
+      "Bash(python3 recolor_final.py)",
+      "Bash(python \"C:\\\\Users\\\\16895\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--OneDrive---University-of-Victoria-MPhD--2023--Yongxuan-Gao-Big--box-website-linlab-bigbox\\\\6179a09b-d6a3-41cc-8a74-20ed24567243\\\\scratchpad\\\\final_check.py\")",
+      "Bash(python \"C:\\\\Users\\\\16895\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--OneDrive---University-of-Victoria-MPhD--2023--Yongxuan-Gao-Big--box-website-linlab-bigbox\\\\6179a09b-d6a3-41cc-8a74-20ed24567243\\\\scratchpad\\\\final_check2.py\")"
     ]
   }
 }
